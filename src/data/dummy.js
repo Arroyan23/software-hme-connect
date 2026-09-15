@@ -1,0 +1,166 @@
+export const tensiItems = [
+  {
+    id: 1,
+    category: "Magang",
+    title: "Internship Batch 7 — PT PLN (Persero) 2025",
+    excerpt: "PLN membuka kesempatan magang bagi mahasiswa teknik elektro S1 semester 5 ke atas. Durasi 3 bulan, penempatan Surabaya & Jakarta.",
+    date: "10 Sep 2026",
+    tag: "Magang",
+    color: "bg-amber-100 text-amber-800",
+  },
+  {
+    id: 2,
+    category: "Beasiswa",
+    title: "Beasiswa Unggulan Kemendikbud 2026 — Pendaftaran Dibuka",
+    excerpt: "Kuota 500 penerima beasiswa penuh S1. Persyaratan IPK minimal 3.25, surat rekomendasi, dan esai motivasi.",
+    date: "5 Sep 2026",
+    tag: "Beasiswa",
+    color: "bg-green-100 text-green-700",
+  },
+  {
+    id: 3,
+    category: "Lomba",
+    title: "National Electrical Engineering Competition (NEEC) 2026",
+    excerpt: "Kompetisi tingkat nasional bidang power electronics, robotika, dan IoT. Hadiah total Rp 150.000.000.",
+    date: "1 Sep 2026",
+    tag: "Lomba",
+    color: "bg-amber-100 text-amber-700",
+  },
+  {
+    id: 4,
+    category: "Informasi",
+    title: "Jadwal Seleksi Program MSIB Kampus Merdeka Batch 8",
+    excerpt: "MSIB Batch 8 dibuka dengan lebih dari 200 mitra industri. Segera daftarkan diri sebelum 30 September 2026.",
+    date: "28 Ags 2026",
+    tag: "MSIB",
+    color: "bg-purple-100 text-purple-700",
+  },
+  {
+    id: 5,
+    category: "Lomba",
+    title: "IEEE Region 10 Student Paper Contest 2026",
+    excerpt: "Kontes paper mahasiswa tingkat Asia Pasifik untuk semua cabang ilmu teknik elektro dan informatika.",
+    date: "20 Ags 2026",
+    tag: "Lomba",
+    color: "bg-amber-100 text-amber-700",
+  },
+  {
+    id: 6,
+    category: "Beasiswa",
+    title: "Beasiswa Astra 1st Program 2026 — Teknik Prioritas",
+    excerpt: "Astra membuka beasiswa senilai Rp 24 juta/tahun untuk mahasiswa teknik berprestasi dengan keterlibatan sosial.",
+    date: "15 Ags 2026",
+    tag: "Beasiswa",
+    color: "bg-green-100 text-green-700",
+  },
+];
+
+export const kegiatanItems = [
+  {
+    id: 1,
+    title: "ELEKTRIKA 2026 — Festival Teknologi & Inovasi",
+    date: "20 Sep 2026",
+    location: "Gedung FTMM Universitas Airlangga",
+    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop&auto=format",
+    desc: "Festival tahunan HME UA yang menggabungkan kompetisi teknologi, pameran inovasi, dan seminar industri berskala nasional.",
+  },
+  {
+    id: 2,
+    title: "Pelatihan Arduino & IoT untuk Pemula",
+    date: "14 Sep 2026",
+    location: "Lab Elektronika FTMM",
+    image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=400&fit=crop&auto=format",
+    desc: "Workshop intensif 2 hari pengenalan mikrokontroler Arduino, sensor, dan konsep Internet of Things bagi mahasiswa baru.",
+  },
+  {
+    id: 3,
+    title: "Seminar Nasional: Transisi Energi & EBT Indonesia",
+    date: "7 Sep 2026",
+    location: "Aula Rektorat Universitas Airlangga",
+    image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=600&h=400&fit=crop&auto=format",
+    desc: "Seminar menghadirkan pakar energi dari ESDM, PLN, dan akademisi untuk membahas peran EBT dalam transisi energi nasional.",
+  },
+  {
+    id: 4,
+    title: "Bakti Sosial Desa Binaan — Instalasi Listrik Rumah Warga",
+    date: "30 Ags 2026",
+    location: "Desa Sumber Beras, Banyuwangi",
+    image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=400&fit=crop&auto=format",
+    desc: "Pengabdian masyarakat bersama divisi Pengmas: perbaikan instalasi listrik rumah warga tidak mampu di desa binaan FTMM.",
+  },
+];
+
+export const alumniItems = [
+  {
+    id: 1,
+    name: "Rizky Firmansyah, S.T.",
+    angkatan: "2019",
+    company: "PLN Nusantara Power",
+    position: "Electrical Engineer",
+    title: "Lowongan: Junior Power Systems Engineer — PLN Nusantara Power",
+    desc: "Membuka rekrutmen fresh graduate teknik elektro. Kirim CV ke email rekrutmen sebelum 25 September 2026.",
+    type: "Lowongan",
+    color: "bg-electric-500",
+  },
+  {
+    id: 2,
+    name: "Aulia Prasetyo, S.T., M.T.",
+    angkatan: "2016",
+    company: "Siemens Indonesia",
+    position: "Senior Automation Engineer",
+    title: "Info: Graduate Trainee Program Siemens Indonesia 2026",
+    desc: "Program trainee 12 bulan dengan rotasi antar divisi untuk lulusan teknik. Pendaftaran online dibuka s.d. Oktober 2026.",
+    type: "Program",
+    color: "bg-navy-700",
+  },
+  {
+    id: 3,
+    name: "Nadia Kusuma, S.T.",
+    angkatan: "2020",
+    company: "Grab Indonesia",
+    position: "Hardware Engineer",
+    title: "Info Alumni: Tips Lolos Seleksi Tech Company Big 4",
+    desc: "Sharing session online bersama alumni HME UA yang kini bekerja di Grab, Gojek, dan Tokopedia. Sabtu, 28 September 2026.",
+    type: "Sharing",
+    color: "bg-green-600",
+  },
+];
+
+export const dosenItems = [
+  { id: 1, name: "Prof. Dr. Ir. Ahmad Basuki, M.T.", photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&auto=format" },
+  { id: 2, name: "Dr. Ir. Siti Nurhaliza, M.T.", photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&auto=format" },
+  { id: 3, name: "Dr. Teguh Wahyudi, S.T., M.T.", photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&auto=format" },
+  { id: 4, name: "Ir. Dewi Rahayu, M.Sc.", photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop&auto=format" },
+  { id: 5, name: "Dr. Budi Santoso, S.T., M.T.", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&auto=format" },
+  { id: 6, name: "Nur Aini Rakhmawati, S.T., Ph.D.", photo: "https://images.unsplash.com/photo-1598550874175-4d0ef436c909?w=200&h=200&fit=crop&auto=format" },
+  { id: 7, name: "Dr. Hendra Kusuma, M.Eng.", photo: "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&h=200&fit=crop&auto=format" },
+  { id: 8, name: "Ir. Yuli Setyo Indartono, M.T.", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&auto=format" },
+];
+
+export const pengurusItems = {
+  petinggi: [
+    { jabatan: "Ketua Himpunan", name: "Muhammad Farhan Al-Rasyid", angkatan: "2023" },
+    { jabatan: "Wakil Ketua Himpunan", name: "Anindita Sekar Wulandari", angkatan: "2023" },
+    { jabatan: "Sekretaris I", name: "Bagas Dwi Nugroho", angkatan: "2023" },
+    { jabatan: "Sekretaris II", name: "Nabilah Putri Ramadhani", angkatan: "2024" },
+    { jabatan: "Bendahara I", name: "Kevin Andrianto", angkatan: "2023" },
+    { jabatan: "Bendahara II", name: "Syifa Aulia Rachman", angkatan: "2024" },
+  ],
+  divisi: [
+    { nama: "Medinfo", kepanjangan: "Media dan Informasi", kepala: "Daffa Rizky Pratama", anggota: 8, color: "bg-[#c9970d]" },
+    { nama: "Advokesma", kepanjangan: "Advokasi dan Kesejahteraan Mahasiswa", kepala: "Zahra Nabilla", anggota: 6, color: "bg-indigo-500" },
+    { nama: "Keprofesian", kepanjangan: "Keprofesian", kepala: "Reza Aditya Kurnia", anggota: 9, color: "bg-violet-500" },
+    { nama: "Seniora", kepanjangan: "Seni dan Olahraga", kepala: "Laila Putri Siregar", anggota: 10, color: "bg-pink-500" },
+    { nama: "BPO", kepanjangan: "Badan Pengawas Organisasi", kepala: "Ahmad Zikri Hakim", anggota: 5, color: "bg-amber-500" },
+    { nama: "Humas", kepanjangan: "Hubungan Masyarakat", kepala: "Cindy Margaretha", anggota: 7, color: "bg-teal-500" },
+    { nama: "Pengmas", kepanjangan: "Pengabdian Masyarakat", kepala: "Ikhsan Maulana", anggota: 8, color: "bg-green-500" },
+    { nama: "Ekraf", kepanjangan: "Ekonomi Kreatif", kepala: "Tiara Anggraeni", anggota: 6, color: "bg-orange-500" },
+  ],
+};
+
+export const dashboardStats = {
+  totalTensi: 24,
+  totalKegiatan: 12,
+  totalAlumni: 8,
+  totalAnggota: 185,
+};
