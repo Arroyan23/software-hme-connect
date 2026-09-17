@@ -133,4 +133,16 @@ test('image upload validates bytes and stores retrievable WebP in PostgreSQL',as
   const image=await fetch(base.replace('/api','')+uploaded.data.url);
   assert.equal(image.headers.get('content-type'),'image/webp'); assert.ok((await image.arrayBuffer()).byteLength > 0);
   const row=await pool.query('SELECT mime FROM hme.media WHERE id=$1',[uploaded.data.url.split('/').pop()]); assert.equal(row.rows[0].mime,'image/webp');
+  for (const kind of ['petinggi','divisi']) {
+    const existing=(await admin(`/${kind}`)).data[0];
+    const photo=uploaded.data.url;
+    assert.equal((await admin(`/${kind}/${existing.id}`,'PUT',{...existing,photo})).status,200);
+    const stored=(await pool.query('SELECT data FROM hme.content WHERE id=$1',[existing.id])).rows[0].data;
+    assert.equal(stored.photo,photo);
+    const publicItem=(await admin('/site')).data.pengurusItems[kind].find(item => item.id === existing.id);
+    assert.equal(publicItem.photo,photo);
+    assert.equal((await admin(`/${kind}/${existing.id}`,'PUT',{...existing,photo:'javascript:alert(1)'})).status,400);
+    assert.equal((await admin(`/${kind}/${existing.id}`,'PUT',{...existing,photo:''})).status,200);
+    assert.equal((await admin('/site')).data.pengurusItems[kind].find(item => item.id === existing.id).photo,'');
+  }
 });

@@ -13,8 +13,8 @@ export const schemas = {
   kegiatan: z.object({ title: text, date, location: text, type: z.enum(['Seminar','Workshop','Baksos','Kompetisi','Kunjungan','Lainnya']).default('Lainnya'), desc: description, image: url, link: url }),
   alumni: z.object({ name: text, angkatan: year, company: text, position: text, title: text, desc: description, type: z.enum(['Lowongan','Program','Sharing','Beasiswa']), link: url }),
   dosen: z.object({ name: text, photo: url }),
-  petinggi: z.object({ name: text, jabatan: text, angkatan: year }),
-  divisi: z.object({ nama: text, kepanjangan: text, kepala: text, anggota: z.coerce.number().int().min(0).max(10000), color: z.enum(['bg-[#c9970d]','bg-indigo-500','bg-violet-500','bg-pink-500','bg-amber-500','bg-teal-500','bg-green-500','bg-orange-500']).default('bg-[#c9970d]') }),
+  petinggi: z.object({ name: text, jabatan: text, angkatan: year, photo: url }),
+  divisi: z.object({ nama: text, kepanjangan: text, kepala: text, photo: url, anggota: z.coerce.number().int().min(0).max(10000), color: z.enum(['bg-[#c9970d]','bg-indigo-500','bg-violet-500','bg-pink-500','bg-amber-500','bg-teal-500','bg-green-500','bg-orange-500']).default('bg-[#c9970d]') }),
 };
 export const memberSchema = z.object({ name: text, nim: z.string().trim().regex(/^[0-9A-Za-z-]{4,30}$/), email: z.email().max(254), angkatan: year, phone: z.string().trim().min(8).max(30), motivation: description });
 export const alumniSubmissionSchema = schemas.alumni.extend({ email: z.email().max(254) });

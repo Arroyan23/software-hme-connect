@@ -2,6 +2,13 @@
 @import 'tailwindcss';
 
 @theme {
+  --animate-department-gradient: department-gradient var(--drift-duration, 12s) ease-in-out infinite alternate;
+  @keyframes department-gradient {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    33% { transform: translate(calc(-50% + var(--drift-x)), calc(-50% + var(--drift-y))) scale(1.18); }
+    66% { transform: translate(calc(-50% - var(--drift-y)), calc(-50% + var(--drift-x))) scale(.86); }
+    100% { transform: translate(calc(-50% - var(--drift-x)), calc(-50% - var(--drift-y))) scale(1.08); }
+  }
   --color-navy-950: #0a0a0a;
   --color-navy-900: #111111;
   --color-navy-800: #1a1a1a;
@@ -14,46 +21,40 @@
   --color-electric-300: #e6c25a;
   --color-gold-500: #f59e0b;
   --color-gold-400: #fbbf24;
-
   --font-serif: "DM Serif Display", serif;
   --font-sans: "Inter", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  font-family: "Inter", sans-serif;
-  background-color: #ffffff;
-  color: #111827;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Hide scrollbar by default */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+body { font-family: "Inter", sans-serif; background-color: #ffffff; color: #111827; -webkit-font-smoothing: antialiased; }
+/* Scrollbar kanan */
+html { scrollbar-width: thin; scrollbar-color: #c9970d transparent; }
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
+  background: linear-gradient(180deg, #e6c25a 0%, #c9970d 55%, #a67c00 100%);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: linear-gradient(180deg, #f4d47c 0%, #d9a921 60%, #c9970d 100%);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+.font-serif { font-family: "DM Serif Display", serif; }
+.font-mono { font-family: "JetBrains Mono", monospace; }
+
+/* Ken Burns zoom-in untuk slide divisi yang aktif (sinkron 5 detik dengan auto-slide) */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes landing-zoom-in { from { transform: scale(1); } to { transform: scale(1.12); } }
+  .kenburns-active { animation: landing-zoom-in 5s linear forwards; }
 }
 
-.font-serif {
-  font-family: "DM Serif Display", serif;
-}
 
-.font-mono {
-  font-family: "JetBrains Mono", monospace;
-}

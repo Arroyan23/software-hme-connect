@@ -19,6 +19,46 @@ Setup lokal membuat database `hme_website`, schema `hme`, data contoh dari UI la
 
 Untuk PostgreSQL di mesin lain, gunakan .env.example sebagai acuan, isi DATABASE_URL, SESSION_SECRET acak minimal 32 karakter, ADMIN_INVITE_CODE, dan APP_ORIGINS, lalu jalankan `npm run db:migrate`. Buat admin pertama melalui /register menggunakan kode undangan. Setup tidak menimpa .env yang sudah ada.
 
+## Menjalankan dengan Docker
+
+Docker Compose menjalankan aplikasi dengan PostgreSQL Supabase sebagai database online. Pada komputer baru, prasyaratnya hanya Docker Desktop atau Docker Engine dengan Compose:
+
+```sh
+cp .env.docker.example .env
+# Isi DATABASE_URL Supabase dan ganti SESSION_SECRET serta ADMIN_INVITE_CODE.
+docker compose up --build -d
+```
+
+Buka http://localhost:3001. Backend otomatis menjalankan migrasi dan seed saat container mulai; tidak perlu menjalankan `npm install`, memasang PostgreSQL, atau menjalankan `npm run setup:local`. Buat admin pertama melalui `/register` menggunakan nilai `ADMIN_INVITE_CODE` dari `.env`.
+
+Perintah yang berguna:
+
+```sh
+docker compose logs -f app
+docker compose ps
+docker compose down
+```
+
+Data aplikasi berada di Supabase. `docker compose down` hanya menghentikan container aplikasi dan tidak menghapus data Supabase.
+
+Untuk mengakses dari komputer lain dalam jaringan yang sama, gunakan alamat IP komputer host, misalnya `http://192.168.1.10:3001`, lalu tambahkan alamat tersebut ke `APP_ORIGINS` sebelum menjalankan Compose ulang. Port `3001` juga harus diizinkan oleh firewall host.
+
+### Menggunakan PostgreSQL Supabase
+
+Jika database ingin dikelola online oleh Supabase, gunakan Compose khusus Supabase:
+
+```sh
+cp .env.supabase.example .env
+# Isi DATABASE_URL dari Supabase dan ganti semua secret contoh.
+docker compose -f docker-compose.supabase.yml up --build -d
+```
+
+Compose ini hanya menjalankan aplikasi. Tidak ada container PostgreSQL lokal; `DATABASE_URL` harus menunjuk ke connection string PostgreSQL Supabase, sebaiknya dengan `?sslmode=require`. Gunakan Direct connection atau Session pooler. Jangan commit `.env`.
+
+Saat container aplikasi mulai, `server/index.js` tetap menjalankan `server/migrate.js`. Schema dan tabel dibuat dengan `CREATE SCHEMA/TABLE IF NOT EXISTS`, sehingga objek yang sudah ada tidak dibuat ulang. Namun, migrasi ini **tidak** mengubah atau menyamakan tabel yang sudah ada: kolom, tipe data, constraint, index, dan schema harus kompatibel dengan `server/schema.sql`.
+
+Project mengharapkan tabel berada di schema `hme`, bukan `public`. Jika database Supabase memiliki tabel yang hanya mirip di `public`, tabel tersebut tidak otomatis dipakai. Selain itu, jika `hme.migrations` belum memiliki baris `initial-content`, seed data contoh akan dijalankan. Periksa atau backup database Supabase terlebih dahulu agar tidak terjadi konflik atau data duplikat.
+
 ## Halaman & Fitur
 
 - /login atau /sign-in: login admin; /register atau /sign-up: pendaftaran admin memakai ADMIN_INVITE_CODE dari pengelola.

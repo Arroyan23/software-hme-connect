@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL wajib diisi di .env}
+      DATABASE_SSL_REJECT_UNAUTHORIZED: ${DATABASE_SSL_REJECT_UNAUTHORIZED:-false}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET wajib diisi di .env}
+      ADMIN_INVITE_CODE: ${ADMIN_INVITE_CODE:?ADMIN_INVITE_CODE wajib diisi di .env}
+      APP_ORIGINS: ${APP_ORIGINS:-http://localhost:3001}
+      HOST: 0.0.0.0
+      PORT: 3001
+    ports:
+      - "${APP_PORT:-3001}:3001"

@@ -11,6 +11,7 @@ export default function ContentForm({ kind,initial={},onSave,onCancel,submitLabe
   const change=(name,value) => setValues(v => ({...v,[name]:value}));
   async function upload(name,file) {
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError('Ukuran gambar maksimal 5 MB.'); return; }
     setUploading(true); setError('');
     try { const form=new FormData(); form.append('file',file); const data=await api('/media',{method:'POST',body:form}); change(name,data.url); }
     catch(e) { setError(e.message); } finally { setUploading(false); }
@@ -28,7 +29,12 @@ export default function ContentForm({ kind,initial={},onSave,onCancel,submitLabe
           : f.type === 'color' ? <div className="flex gap-2" role="radiogroup" aria-label={f.label}>{f.options.map(color => <button key={color} type="button" role="radio" aria-checked={values[f.name] === color} aria-label={color} title={color} onClick={() => change(f.name,color)} className={`w-8 h-8 rounded-full ${color} ${values[f.name] === color ? 'ring-2 ring-offset-2 ring-gray-800' : ''}`} />)}</div>
           : f.type.includes('textarea') ? <textarea id={`field-${f.name}`} name={f.name} rows={4} maxLength={f.name === 'body' ? 50000 : 20000} required={!f.type.startsWith('optional')} className={inputClass} value={values[f.name]} onChange={e => change(f.name,e.target.value)} />
           : <input id={`field-${f.name}`} name={f.name} type={f.type === 'image' ? 'text' : f.type.replace('optional-','')} min={f.type === 'number' ? 0 : undefined} max={f.type === 'number' ? 10000 : undefined} pattern={f.name === 'angkatan' ? '(19|20)[0-9]{2}' : undefined} required={!f.type.startsWith('optional') && f.type !== 'image'} className={inputClass} value={values[f.name]} onChange={e => change(f.name,e.target.value)} />}
-        {f.type === 'image' && <div className="mt-2 flex items-center gap-3"><label className="text-xs text-[#a67c00] flex items-center gap-2 cursor-pointer"><Upload size={16}/>{uploading ? 'Mengunggah...' : 'Unggah gambar'}<input aria-label={`Unggah ${f.label}`} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={e => upload(f.name,e.target.files[0])}/></label>{values[f.name] && <img src={values[f.name]} alt="Pratinjau" className="w-16 h-16 object-cover rounded-lg"/>}</div>}
+        {f.type === 'image' && <div className="mt-2 space-y-3">
+          <div className="flex flex-wrap items-center gap-3"><label className="text-xs text-[#a67c00] flex items-center gap-2 cursor-pointer"><Upload size={16}/>{uploading ? 'Mengunggah...' : 'Unggah gambar'}<input aria-label={`Unggah ${f.label}`} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={e => { upload(f.name,e.target.files[0]); e.target.value=''; }}/></label>
+          {values[f.name] && <button type="button" onClick={() => change(f.name,'')} className="inline-flex items-center gap-1 text-xs text-red-700"><X size={14}/>Lepas foto</button>}</div>
+          {values[f.name] && <img src={values[f.name]} alt={`Pratinjau ${f.label}`} className={kind === 'divisi' ? 'w-full aspect-video object-cover rounded-lg' : 'w-24 h-24 object-cover rounded-lg'}/>}
+          <p className="text-xs text-gray-500">JPEG, PNG, atau WebP. Maksimal 5 MB.</p>
+        </div>}
       </div>)}
     </fieldset>
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
