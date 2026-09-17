@@ -27,6 +27,7 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) throw
 app.use('/api', session({
   name: 'hme.sid', secret: process.env.SESSION_SECRET,
   store: new PgStore({ pool, schemaName: 'hme', tableName: 'sessions' }),
+  proxy: true,
   resave: false, saveUninitialized: false,
   cookie: { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 8 * 60 * 60 * 1000 },
 }));
