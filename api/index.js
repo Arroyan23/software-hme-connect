@@ -9,17 +9,7 @@ export default async function handler(req, res) {
     throw error;
   });
   await migrationPromise;
-
-  await new Promise((resolve, reject) => {
-    res.once('finish', resolve);
-    res.once('close', resolve);
-    res.once('error', reject);
-    try {
-      app(req, res);
-    } catch (error) {
-      reject(error);
-    }
-  });
+  return app(req, res);
 }
 
 export { app };
