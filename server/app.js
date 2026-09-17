@@ -39,7 +39,15 @@ app.use('/api', (req, res, next) => {
   next();
 });
 app.get('/api/health', async (req, res) => { await pool.query('SELECT 1'); res.json({ status: 'ok', database: 'postgresql' }); });
-app.get('/api/auth/csrf', (req, res) => { req.session.csrf ||= randomBytes(32).toString('hex'); res.json({ token: req.session.csrf }); });
+app.get('/api/auth/csrf', async (req, res, next) => {
+  try {
+    req.session.csrf ||= randomBytes(32).toString('hex');
+    await saveSession(req);
+    res.json({ token: req.session.csrf });
+  } catch (error) {
+    next(error);
+  }
+});
 const authLimit = rateLimit({ windowMs: 15*60*1000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false, message: { message: 'Terlalu banyak percobaan. Coba lagi 15 menit lagi.' } });
 async function signedIn(req, res, next) {
   if (!req.session.adminId) return next(fail(401, 'Silakan login sebagai admin'));
