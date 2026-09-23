@@ -8,6 +8,7 @@ import SiteProvider from "./SiteProvider";
 export default function Root() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith("/dashboard");
+  const isImeConnect = location.pathname.startsWith("/ime-connect");
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -28,13 +29,15 @@ export default function Root() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  return (
-    <SiteProvider><div className="min-h-screen flex flex-col">
-      <Navbar />
+  const shell = (
+    <div className="min-h-screen flex flex-col">
+      {!isImeConnect && <Navbar />}
       <main className="flex-1">
         <Outlet />
       </main>
-      {!isDashboard && <Footer />}
-    </div></SiteProvider>
+      {!isDashboard && !isImeConnect && <Footer />}
+    </div>
   );
+
+  return isImeConnect ? shell : <SiteProvider>{shell}</SiteProvider>;
 }

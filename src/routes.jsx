@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import RequireAdmin from "./components/RequireAdmin";
 import AuthPage from "./pages/AuthPage";
 import SubmissionPage from "./pages/SubmissionPage";
+import ImeConnectPage from "./pages/ImeConnectPage";
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +26,11 @@ export const router = createBrowserRouter([
       { path: "sign-up", element: <AuthPage key="signup" register /> },
       { path: "alumni/kirim", element: <SubmissionPage key="alumni" kind="submit-alumni" /> },
       { path: "daftar-anggota", element: <SubmissionPage key="anggota" kind="anggota" /> },
+      { path: "ime-connect", Component: ImeConnectPage },
+      { path: "ime-connect/tensi", Component: ImeConnectPage },
+      { path: "ime-connect/alumni", Component: ImeConnectPage },
+      { path: "ime-connect/network", Component: ImeConnectPage },
+      { path: "ime-connect/profil", Component: ImeConnectPage },
     ],
   },
 ]);
