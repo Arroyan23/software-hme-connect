@@ -7,6 +7,7 @@ export async function migrate() {
   await transaction(async client => {
     await client.query('SELECT pg_advisory_xact_lock(8749321)');
     await client.query(await readFile(new URL('./schema.sql', import.meta.url), 'utf8'));
+    await client.query('ALTER TABLE hme.members ADD COLUMN IF NOT EXISTS angkatan text');
     const seeded = await client.query("SELECT 1 FROM hme.migrations WHERE name = 'initial-content'");
     if (seeded.rowCount) return;
     const months = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',Mei:'05',Jun:'06',Jul:'07',Ags:'08',Sep:'09',Okt:'10',Nov:'11',Des:'12' };

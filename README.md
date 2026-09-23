@@ -21,11 +21,11 @@ Untuk PostgreSQL di mesin lain, gunakan .env.example sebagai acuan, isi DATABASE
 
 ## Menjalankan dengan Docker
 
-Docker Compose menjalankan aplikasi dengan PostgreSQL Supabase sebagai database online. Pada komputer baru, prasyaratnya hanya Docker Desktop atau Docker Engine dengan Compose:
+Docker Compose menjalankan aplikasi dan PostgreSQL lokal dengan volume persisten. Pada komputer baru, prasyaratnya hanya Docker Desktop atau Docker Engine dengan Compose:
 
 ```sh
 cp .env.docker.example .env
-# Isi DATABASE_URL Supabase dan ganti SESSION_SECRET serta ADMIN_INVITE_CODE.
+# Ganti POSTGRES_PASSWORD, SESSION_SECRET, dan ADMIN_INVITE_CODE.
 docker compose up --build -d
 ```
 
@@ -39,7 +39,7 @@ docker compose ps
 docker compose down
 ```
 
-Data aplikasi berada di Supabase. `docker compose down` hanya menghentikan container aplikasi dan tidak menghapus data Supabase.
+Data PostgreSQL berada di volume Docker `postgres_data`. `docker compose down` menghentikan container tanpa menghapus volume; gunakan `docker compose down -v` hanya jika ingin menghapus database lokal.
 
 Untuk mengakses dari komputer lain dalam jaringan yang sama, gunakan alamat IP komputer host, misalnya `http://192.168.1.10:3001`, lalu tambahkan alamat tersebut ke `APP_ORIGINS` sebelum menjalankan Compose ulang. Port `3001` juga harus diizinkan oleh firewall host.
 

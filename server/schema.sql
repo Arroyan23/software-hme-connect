@@ -7,6 +7,16 @@ CREATE TABLE IF NOT EXISTS hme.admins (
   password_hash text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS hme.members (
+  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name text NOT NULL,
+  nim text NOT NULL UNIQUE,
+  email text NOT NULL UNIQUE,
+  password_hash text NOT NULL,
+  status text NOT NULL CHECK (status IN ('mahasiswa','alumni')),
+  angkatan text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS hme.sessions (
   sid varchar PRIMARY KEY,
   sess json NOT NULL,

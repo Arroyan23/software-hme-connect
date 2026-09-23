@@ -10,7 +10,7 @@ import { promisify } from 'node:util';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { pool, transaction } from './db.js';
-import { schemas, present, memberSchema, alumniSubmissionSchema, settingsSchema, registerSchema, loginSchema } from './validation.js';
+import { schemas, present, memberSchema, alumniSubmissionSchema, settingsSchema, registerSchema, memberRegisterSchema, loginSchema, entryYearFromEmail } from './validation.js';
 
 const scrypt = promisify(scryptCallback);
 const fail = (status, message) => Object.assign(new Error(message), { status });
@@ -29,7 +29,7 @@ app.use('/api', session({
   store: new PgStore({ pool, schemaName: 'hme', tableName: 'sessions' }),
   proxy: true,
   resave: false, saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 8 * 60 * 60 * 1000 },
+  cookie: { httpOnly: true, sameSite: 'lax', secure: process.env.COOKIE_SECURE === 'true', maxAge: 8 * 60 * 60 * 1000 },
 }));
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store');
@@ -51,14 +51,18 @@ app.get('/api/auth/csrf', async (req, res, next) => {
 });
 const authLimit = rateLimit({ windowMs: 15*60*1000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false, message: { message: 'Terlalu banyak percobaan. Coba lagi 15 menit lagi.' } });
 async function signedIn(req, res, next) {
-  if (!req.session.adminId) return next(fail(401, 'Silakan login sebagai admin'));
+  if (!req.session.adminId || req.session.role !== 'admin') return next(fail(401, 'Silakan login sebagai admin'));
   const { rows } = await pool.query('SELECT id,name,email FROM hme.admins WHERE id=$1', [req.session.adminId]);
   if (!rows[0]) return next(fail(401, 'Sesi tidak valid'));
   req.admin = rows[0]; next();
 }
-async function authenticate(req, admin) {
-  await regenerate(req); req.session.adminId = admin.id; req.session.csrf = randomBytes(32).toString('hex'); await saveSession(req);
-  return { user: { id:admin.id,name:admin.name,email:admin.email }, csrf: req.session.csrf };
+async function authenticate(req, account, role) {
+  await regenerate(req);
+  req.session.role = role;
+  req.session[role === 'admin' ? 'adminId' : 'memberId'] = account.id;
+  req.session.csrf = randomBytes(32).toString('hex');
+  await saveSession(req);
+  return { user: { id:account.id,name:account.name,email:account.email,nim:account.nim,status:account.status,role }, csrf: req.session.csrf };
 }
 app.post('/api/auth/register', authLimit, async (req,res) => {
   const data = registerSchema.parse(req.body);
@@ -66,21 +70,34 @@ app.post('/api/auth/register', authLimit, async (req,res) => {
   const salt = randomBytes(16).toString('hex');
   const hash = (await scrypt(data.password,salt,64)).toString('hex');
   const { rows } = await pool.query('INSERT INTO hme.admins(name,email,password_hash) VALUES($1,$2,$3) RETURNING id,name,email', [data.name,data.email,`${salt}:${hash}`]);
-  res.status(201).json(await authenticate(req,rows[0]));
+  res.status(201).json(await authenticate(req,rows[0],'admin'));
+});
+app.post('/api/auth/register-member', authLimit, async (req,res) => {
+  const data = memberRegisterSchema.parse(req.body);
+  const salt = randomBytes(16).toString('hex');
+  const hash = (await scrypt(data.password,salt,64)).toString('hex');
+  const angkatan = entryYearFromEmail(data.email);
+  const { rows } = await pool.query('INSERT INTO hme.members(name,nim,email,password_hash,status,angkatan) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,name,nim,email,status,angkatan', [data.name,data.nim,data.email,`${salt}:${hash}`,data.status,angkatan]);
+  res.status(201).json(await authenticate(req,rows[0],'member'));
 });
 app.post('/api/auth/login', authLimit, async (req,res) => {
   const data = loginSchema.parse(req.body);
-  const { rows } = await pool.query('SELECT * FROM hme.admins WHERE email=$1', [data.email]);
-  const admin = rows[0];
-  const [salt,hash] = (admin?.password_hash || `${'0'.repeat(32)}:${'0'.repeat(128)}`).split(':');
+  const adminResult = await pool.query('SELECT *,\'admin\' AS role FROM hme.admins WHERE email=$1', [data.email]);
+  const memberResult = adminResult.rowCount ? { rows:[] } : await pool.query('SELECT *,\'member\' AS role FROM hme.members WHERE email=$1', [data.email]);
+  const account = adminResult.rows[0] || memberResult.rows[0];
+  const [salt,hash] = (account?.password_hash || `${'0'.repeat(32)}:${'0'.repeat(128)}`).split(':');
   const candidate = (await scrypt(data.password,salt,64)).toString('hex');
-  if (!admin || !equal(candidate,hash)) throw fail(401,'Email atau password salah');
-  res.json(await authenticate(req,admin));
+  if (!account || !equal(candidate,hash)) throw fail(401,'Email atau password salah');
+  res.json(await authenticate(req,account,account.role));
 });
 app.get('/api/auth/me', signedIn, (req,res) => res.json(req.admin));
 app.post('/api/auth/logout', async (req,res) => {
   await new Promise((ok,no) => req.session.destroy(e => e ? no(e) : ok()));
-  res.clearCookie('hme.sid', { httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV === 'production' }).json({ ok:true });
+  res.clearCookie('hme.sid', { httpOnly:true,sameSite:'lax',secure:process.env.COOKIE_SECURE === 'true' }).json({ ok:true });
+});
+app.get('/api/users', signedIn, async (req,res) => {
+  const { rows } = await pool.query("SELECT id,name,email,NULL::text AS nim,'admin' AS role,NULL::text AS status,NULL::text AS angkatan,created_at FROM hme.admins UNION ALL SELECT id,name,email,nim,'member' AS role,status,angkatan,created_at FROM hme.members ORDER BY created_at DESC,id DESC");
+  res.json(rows);
 });
 async function stats(client = pool) {
   const { rows } = await client.query("SELECT kind,count(*)::int AS total FROM hme.content GROUP BY kind");

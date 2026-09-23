@@ -20,6 +20,9 @@ export const memberSchema = z.object({ name: text, nim: z.string().trim().regex(
 export const alumniSubmissionSchema = schemas.alumni.extend({ email: z.email().max(254) });
 export const settingsSchema = z.object({ periode: text, address: text, email: z.email(), phone: text, instagram: url, youtube: url, linkedin: url, twitter: url });
 export const registerSchema = z.object({ name: text, email: z.email().max(254).transform(v => v.toLowerCase()), password: z.string().min(12, 'Password minimal 12 karakter').max(128), inviteCode: z.string().min(1).max(200) });
+const studentEmail = z.email().max(254).transform(v => v.toLowerCase()).refine(v => /ftmm-(?:19|20)\d{2}@student\.unair\.ac\.id$/i.test(v), 'Gunakan email student.unair.ac.id dengan format ...ftmm-YYYY@student.unair.ac.id');
+export const memberRegisterSchema = z.object({ name: text, nim: z.string().trim().regex(/^[0-9A-Za-z-]{4,30}$/, 'NIM tidak valid'), email: studentEmail, password: z.string().min(12, 'Password minimal 12 karakter').max(128), status: z.enum(['mahasiswa','alumni']) });
+export function entryYearFromEmail(email) { return email.match(/ftmm-((?:19|20)\d{2})@student\.unair\.ac\.id$/i)?.[1] || null; }
 export const loginSchema = registerSchema.pick({ email: true }).extend({ password: z.string().min(1).max(128) });
 
 export function present(row) {

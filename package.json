@@ -10,6 +10,7 @@
     "start": "NODE_ENV=production node server/index.js",
     "setup:local": "node scripts/setup-local.js",
     "db:migrate": "node server/migrate.js",
+    "db:sync-remote": "node scripts/sync-local-to-supabase.mjs",
     "test": "node --test server/api.test.js",
     "build": "vite build",
     "lint": "eslint .",

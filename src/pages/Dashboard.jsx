@@ -22,6 +22,47 @@ function StatCard({ label, value, icon, color }) {
   );
 }
 
+function UsersTab({ users, search }) {
+  const visibleUsers = users.filter(user => JSON.stringify(user).toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="font-semibold text-[#111111]">Database User</h3>
+          <p className="text-gray-400 text-sm">{users.length} akun tersimpan</p>
+        </div>
+      </div>
+      <div className="rounded-2xl border border-gray-100 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-100">
+              <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+              <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">NIM</th>
+              <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Angkatan</th>
+              <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Dibuat</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {visibleUsers.map(user => (
+              <tr key={`${user.role}-${user.id}`} className="hover:bg-gray-50/50 transition-colors">
+                <td className="px-5 py-4 font-medium text-[#111111]">{user.name}</td>
+                <td className="px-5 py-4 text-gray-600">{user.email}</td>
+                <td className="px-5 py-4 text-gray-600">{user.nim || '-'}</td>
+                <td className="px-5 py-4 text-gray-600">{user.angkatan || '-'}</td>
+                <td className="px-5 py-4"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs">{user.role === 'admin' ? 'Admin' : user.status}</span></td>
+                <td className="px-5 py-4 text-gray-400 font-mono text-xs hidden sm:table-cell">{new Date(user.created_at).toLocaleString('id-ID')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {visibleUsers.length === 0 && <p className="px-5 py-8 text-center text-sm text-gray-400">User tidak ditemukan.</p>}
+      </div>
+    </div>
+  );
+}
+
 // ── Tab: TENSI ────────────────────────────────────────────────────────────────
 function TensiTab({ onAdd, onEdit, onDelete, items: tensiItems }) {
   return (
@@ -185,12 +226,16 @@ export default function Dashboard() {
   const { dashboardStats } = site;
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [deleting, setDeleting] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
-  useEffect(() => { api('/auth/me').then(setUser).catch(e => setError(e.message)); }, []);
+  useEffect(() => {
+    api('/auth/me').then(setUser).catch(e => setError(e.message));
+    api('/users').then(setUsers).catch(e => setError(e.message));
+  }, []);
   const edit = (kind, item) => { setModal({kind, item}); setError(""); };
   const remove = (kind, item) => { setDeleting({kind, item}); setError(""); };
   const filtered = items => items.filter(item => JSON.stringify(item).toLowerCase().includes(search.toLowerCase()));
@@ -220,7 +265,7 @@ export default function Dashboard() {
     { id: "alumni", label: "Info Alumni" },
   ];
 
-  const extraTabs = [{id:'dosen',label:'Dosen'},{id:'struktur',label:'Struktur Organisasi'},{id:'kiriman',label:'Kiriman'},{id:'settings',label:'Pengaturan'}];
+  const extraTabs = [{id:'dosen',label:'Dosen'},{id:'struktur',label:'Struktur Organisasi'},{id:'kiriman',label:'Kiriman'},{id:'users',label:'User'},{id:'settings',label:'Pengaturan'}];
   return (
     <div className="pt-16 min-h-screen bg-[#fffbeb]">
       {/* Sidebar + Content layout */}
@@ -364,7 +409,8 @@ export default function Dashboard() {
 
               {tab === "tensi" && <TensiTab items={filtered(site.tensiItems)} onAdd={() => edit("tensi")} onEdit={item => edit("tensi", item)} onDelete={item => remove("tensi",item)} />}
               {tab === "kegiatan" && <KegiatanTab items={filtered(site.kegiatanItems)} onAdd={() => edit("kegiatan")} onEdit={item => edit("kegiatan", item)} onDelete={item => remove("kegiatan",item)} />}
-              {extraTabs.some(t => t.id === tab) && <AdminExtras tab={tab} onEdit={edit} onDelete={remove} search={search} />}
+              {extraTabs.some(t => t.id === tab && t.id !== "users") && <AdminExtras tab={tab} onEdit={edit} onDelete={remove} search={search} />}
+              {tab === "users" && <UsersTab users={users} search={search} />}
               {tab === "alumni" && <AlumniTab items={filtered(site.alumniItems)} onAdd={() => edit("alumni")} onEdit={item => edit("alumni", item)} onDelete={item => remove("alumni",item)} />}
             </div>
           </div>

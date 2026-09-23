@@ -7,6 +7,8 @@ import AlumniPage from "./pages/AlumniPage";
 import Dashboard from "./pages/Dashboard";
 import RequireAdmin from "./components/RequireAdmin";
 import AuthPage from "./pages/AuthPage";
+import MemberRegisterPage from "./pages/MemberRegisterPage";
+import MemberLoginPage from "./pages/MemberLoginPage";
 import SubmissionPage from "./pages/SubmissionPage";
 import ImeConnectPage from "./pages/ImeConnectPage";
 
@@ -22,8 +24,11 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <RequireAdmin><Dashboard /></RequireAdmin> },
       { path: "login", element: <AuthPage key="login" /> },
       { path: "sign-in", element: <AuthPage key="signin" /> },
-      { path: "register", element: <AuthPage key="register" register /> },
-      { path: "sign-up", element: <AuthPage key="signup" register /> },
+      { path: "member/login", Component: MemberLoginPage },
+      { path: "member/sign-in", Component: MemberLoginPage },
+      { path: "register", Component: MemberRegisterPage },
+      { path: "sign-up", Component: MemberRegisterPage },
+      { path: "admin/register", element: <AuthPage key="admin-register" register adminRegister /> },
       { path: "alumni/kirim", element: <SubmissionPage key="alumni" kind="submit-alumni" /> },
       { path: "daftar-anggota", element: <SubmissionPage key="anggota" kind="anggota" /> },
       { path: "ime-connect", Component: ImeConnectPage },
