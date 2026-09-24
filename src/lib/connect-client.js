@@ -8,7 +8,7 @@ export function useConnectQuery(path, revision = 0) {
   const [state, setState] = useState(null);
   const [retry, setRetry] = useState(0);
   const generation = useRef(0);
-  const key = `${path}:${revision}:${retry}`;
+  const key = `${path || ''}:${revision}:${retry}`;
   useEffect(() => {
     const version = ++generation.current;
     if (!path) return;
