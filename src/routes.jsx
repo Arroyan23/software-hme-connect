@@ -36,6 +36,8 @@ export const router = createBrowserRouter([
       { path: "ime-connect/alumni", Component: ImeConnectPage },
       { path: "ime-connect/network", Component: ImeConnectPage },
       { path: "ime-connect/profil", Component: ImeConnectPage },
+      { path: "ime-connect/profil/:profileId", Component: ImeConnectPage },
+      { path: "ime-connect/post/:postId", Component: ImeConnectPage },
     ],
   },
 ]);

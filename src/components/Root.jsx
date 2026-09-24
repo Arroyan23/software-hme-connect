@@ -11,7 +11,7 @@ export default function Root() {
   const isImeConnect = location.pathname.startsWith("/ime-connect");
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (isImeConnect || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const lenis = new Lenis({ duration: 1.15, smoothWheel: true });
     let frame = 0;
     const loop = (time) => {
@@ -23,7 +23,7 @@ export default function Root() {
       cancelAnimationFrame(frame);
       lenis.destroy();
     };
-  }, []);
+  }, [isImeConnect]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

@@ -61,6 +61,8 @@ Project mengharapkan tabel berada di schema `hme`, bukan `public`. Jika database
 
 ## Halaman & Fitur
 
+- `/ime-connect`: komunitas khusus akun login, dengan post, komentar, like, simpan, follow/network, pencarian, serta edit profil dan foto. Detail API, batas penyimpanan, migrasi dan pengujian ada di [docs/IME_CONNECT.md](docs/IME_CONNECT.md).
+
 - /login atau /sign-in: login admin; /register atau /sign-up: pendaftaran admin memakai ADMIN_INVITE_CODE dari pengelola.
 - /dashboard: CRUD TENSI, kegiatan, alumni, dosen, pimpinan dan divisi; pencarian; pengaturan; peninjauan kiriman; logout.
 - /alumni/kirim: kiriman info alumni, baru tampil publik setelah disetujui.

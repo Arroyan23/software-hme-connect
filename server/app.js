@@ -10,6 +10,7 @@ import { promisify } from 'node:util';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { pool, transaction } from './db.js';
+import { connectRouter } from './connect.js';
 import { schemas, present, memberSchema, alumniSubmissionSchema, settingsSchema, registerSchema, memberRegisterSchema, loginSchema, entryYearFromEmail } from './validation.js';
 
 const scrypt = promisify(scryptCallback);
@@ -69,16 +70,24 @@ app.post('/api/auth/register', authLimit, async (req,res) => {
   if (!process.env.ADMIN_INVITE_CODE || !equal(data.inviteCode, process.env.ADMIN_INVITE_CODE)) throw fail(403, 'Kode undangan admin tidak valid');
   const salt = randomBytes(16).toString('hex');
   const hash = (await scrypt(data.password,salt,64)).toString('hex');
-  const { rows } = await pool.query('INSERT INTO hme.admins(name,email,password_hash) VALUES($1,$2,$3) RETURNING id,name,email', [data.name,data.email,`${salt}:${hash}`]);
-  res.status(201).json(await authenticate(req,rows[0],'admin'));
+  const account = await transaction(async client => {
+    const { rows } = await client.query('INSERT INTO hme.admins(name,email,password_hash) VALUES($1,$2,$3) RETURNING id,name,email', [data.name,data.email,`${salt}:${hash}`]);
+    await client.query('INSERT INTO hme.connect_profiles(admin_id,username) VALUES($1,$2)', [rows[0].id, `admin_${rows[0].id}`]);
+    return rows[0];
+  });
+  res.status(201).json(await authenticate(req,account,'admin'));
 });
 app.post('/api/auth/register-member', authLimit, async (req,res) => {
   const data = memberRegisterSchema.parse(req.body);
   const salt = randomBytes(16).toString('hex');
   const hash = (await scrypt(data.password,salt,64)).toString('hex');
   const angkatan = entryYearFromEmail(data.email);
-  const { rows } = await pool.query('INSERT INTO hme.members(name,nim,email,password_hash,status,angkatan) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,name,nim,email,status,angkatan', [data.name,data.nim,data.email,`${salt}:${hash}`,data.status,angkatan]);
-  res.status(201).json(await authenticate(req,rows[0],'member'));
+  const account = await transaction(async client => {
+    const { rows } = await client.query('INSERT INTO hme.members(name,nim,email,password_hash,status,angkatan) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,name,nim,email,status,angkatan', [data.name,data.nim,data.email,`${salt}:${hash}`,data.status,angkatan]);
+    await client.query('INSERT INTO hme.connect_profiles(member_id,username) VALUES($1,$2)', [rows[0].id, `member_${rows[0].id}`]);
+    return rows[0];
+  });
+  res.status(201).json(await authenticate(req,account,'member'));
 });
 app.post('/api/auth/login', authLimit, async (req,res) => {
   const data = loginSchema.parse(req.body);
@@ -180,6 +189,7 @@ for (const [kind,schema] of Object.entries(schemas)) {
     if (!result.rowCount) throw fail(404,'Data tidak ditemukan'); res.json({ ok:true });
   });
 }
+app.use('/api/connect', connectRouter);
 app.use('/api', (req,res) => res.status(404).json({ message:'Endpoint tidak ditemukan' }));
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(resolve('dist')));

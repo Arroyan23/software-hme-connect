@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { UserPlus } from 'lucide-react';
 import { api } from '../lib/api';
+import { authLink, connectDestination } from '../lib/auth-redirect';
 
 export default function MemberRegisterPage() {
   const navigate = useNavigate();
+  const { search } = useLocation();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -20,7 +22,7 @@ export default function MemberRegisterPage() {
     }
     try {
       await api('/auth/register-member', { method: 'POST', body: data });
-      navigate('/', { replace: true });
+      navigate(connectDestination(search) || '/ime-connect', { replace: true });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -44,7 +46,7 @@ export default function MemberRegisterPage() {
           <label className="block text-sm">Status<select name="status" defaultValue="mahasiswa" className={field}><option value="mahasiswa">Mahasiswa</option><option value="alumni">Alumni</option></select></label>
           {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
           <button disabled={busy} className="w-full flex justify-center items-center gap-2 rounded-xl bg-[#c9970d] px-4 py-3 font-medium disabled:opacity-50"><UserPlus size={18} />{busy ? 'Memproses...' : 'Daftar'}</button>
-          <Link className="block text-sm text-[#a67c00] text-center" to="/member/login">Sudah punya akun? Masuk</Link>
+          <Link className="block text-sm text-[#a67c00] text-center" to={authLink('/member/login', search)}>Sudah punya akun? Masuk</Link>
         </form>
       </div>
     </div>

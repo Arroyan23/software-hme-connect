@@ -8,6 +8,16 @@ export async function migrate() {
     await client.query('SELECT pg_advisory_xact_lock(8749321)');
     await client.query(await readFile(new URL('./schema.sql', import.meta.url), 'utf8'));
     await client.query('ALTER TABLE hme.members ADD COLUMN IF NOT EXISTS angkatan text');
+    if (!(await client.query("SELECT 1 FROM hme.migrations WHERE name='ime-connect-v1'")).rowCount) {
+      await client.query(await readFile(new URL('./connect-schema.sql', import.meta.url), 'utf8'));
+      await client.query("INSERT INTO hme.migrations(name) VALUES ('ime-connect-v1')");
+    }
+    if (!(await client.query("SELECT 1 FROM hme.migrations WHERE name='ime-connect-publish-quota'")).rowCount) {
+      await client.query(`ALTER TABLE hme.connect_profiles
+        ADD COLUMN publish_window timestamptz NOT NULL DEFAULT now(),
+        ADD COLUMN publish_count smallint NOT NULL DEFAULT 0 CHECK (publish_count BETWEEN 0 AND 60)`);
+      await client.query("INSERT INTO hme.migrations(name) VALUES ('ime-connect-publish-quota')");
+    }
     const seeded = await client.query("SELECT 1 FROM hme.migrations WHERE name = 'initial-content'");
     if (seeded.rowCount) return;
     const months = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',Mei:'05',Jun:'06',Jul:'07',Ags:'08',Sep:'09',Okt:'10',Nov:'11',Des:'12' };

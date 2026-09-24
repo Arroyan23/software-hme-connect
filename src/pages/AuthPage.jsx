@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link,useNavigate } from 'react-router';
+import { Link,useLocation,useNavigate } from 'react-router';
 import { LogIn,UserPlus } from 'lucide-react';
 import { api } from '../lib/api';
+import { authLink, connectDestination } from '../lib/auth-redirect';
 
 export default function AuthPage({ register=false, adminRegister=false }) {
   const navigate=useNavigate();
+  const { search } = useLocation();
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
   async function submit(event) {
@@ -13,7 +15,7 @@ export default function AuthPage({ register=false, adminRegister=false }) {
     if (register && data.password !== data.confirmPassword) { setError('Konfirmasi password tidak sama'); setBusy(false); return; }
     try {
       const result = await api(`/auth/${register ? (adminRegister ? 'register' : 'register-member') : 'login'}`,{ method:'POST',body:data });
-      navigate(result.user?.role === 'admin' ? '/dashboard' : '/', { replace:true });
+      navigate(connectDestination(search) || (result.user?.role === 'admin' ? '/dashboard' : '/ime-connect'), { replace:true });
     }
     catch(e) { setError(e.message); } finally { setBusy(false); }
   }
@@ -32,7 +34,7 @@ export default function AuthPage({ register=false, adminRegister=false }) {
         {register && adminRegister && <label className="block text-sm">Kode undangan admin<input name="inviteCode" type="password" required autoComplete="off" className={field} /></label>}
         {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
         <button disabled={busy} className="w-full flex justify-center items-center gap-2 rounded-xl bg-[#c9970d] px-4 py-3 font-medium disabled:opacity-50">{register ? <UserPlus size={18}/> : <LogIn size={18}/>} {busy ? 'Memproses...' : register ? 'Daftar' : 'Masuk'}</button>
-        <Link className="block text-sm text-[#a67c00] text-center" to={register ? '/login' : '/register'}>{register ? 'Sudah punya akun? Masuk' : 'Daftar anggota baru'}</Link>
+        <Link className="block text-sm text-[#a67c00] text-center" to={authLink(register ? '/login' : '/register', search)}>{register ? 'Sudah punya akun? Masuk' : 'Daftar anggota baru'}</Link>
         {!register && <Link className="block text-xs text-gray-500 text-center" to="/admin/register">Daftar admin</Link>}
       </form>
     </div>

@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { LogIn } from 'lucide-react';
 import { api } from '../lib/api';
+import { authLink, connectDestination } from '../lib/auth-redirect';
 
 export default function MemberLoginPage() {
   const navigate = useNavigate();
+  const { search } = useLocation();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -15,11 +17,7 @@ export default function MemberLoginPage() {
     const data = Object.fromEntries(new FormData(event.currentTarget));
     try {
       const result = await api('/auth/login', { method: 'POST', body: data });
-      if (result.user?.role === 'admin') {
-        navigate('/dashboard', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+      navigate(connectDestination(search) || (result.user?.role === 'admin' ? '/dashboard' : '/ime-connect'), { replace: true });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -40,7 +38,7 @@ export default function MemberLoginPage() {
           <label className="block text-sm">Password<input name="password" type="password" required autoComplete="current-password" className={field} /></label>
           {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
           <button disabled={busy} className="w-full flex justify-center items-center gap-2 rounded-xl bg-[#c9970d] px-4 py-3 font-medium disabled:opacity-50"><LogIn size={18} />{busy ? 'Memproses...' : 'Masuk'}</button>
-          <Link className="block text-sm text-[#a67c00] text-center" to="/register">Belum punya akun? Daftar anggota</Link>
+          <Link className="block text-sm text-[#a67c00] text-center" to={authLink('/register', search)}>Belum punya akun? Daftar anggota</Link>
         </form>
       </div>
     </div>
