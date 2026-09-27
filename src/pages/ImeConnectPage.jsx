@@ -51,6 +51,9 @@ const navItems = [
   ["network", "Network", UsersRound],
   ["profil", "Profil", UserRound],
 ];
+// Urutan khusus bottom navbar HP: Beranda di tengah (raised).
+const mobileNavOrder = ["tensi", "alumni", "beranda", "network", "profil"];
+const navByKey = Object.fromEntries(navItems.map(([key, label, Icon]) => [key, { label, Icon }]));
 const colors = {
   Beasiswa: "bg-emerald-50 text-emerald-700",
   Magang: "bg-blue-50 text-blue-700",
@@ -356,67 +359,73 @@ function PostCard({ post, changed, removed }) {
     }
   }
   return (
-    <article className="rounded-2xl border border-stone-200 bg-white p-5 text-stone-900 transition-colors duration-300 sm:p-6 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100">
+    <article className="rounded-2xl border border-stone-200 bg-white p-4 text-stone-900 transition-colors duration-300 sm:p-6 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100">
       <div className="flex items-start gap-3">
-        <Link to={`/ime-connect/profil/${post.author_id}`}>
+        <Link
+          to={`/ime-connect/profil/${post.author_id}`}
+          className="shrink-0"
+        >
           <Avatar profile={{ name: post.author, avatar: post.avatar }} large />
         </Link>
         <div className="min-w-0 flex-1">
           <Link
             to={`/ime-connect/profil/${post.author_id}`}
-            className="font-bold text-slate-800 connect-dark:text-stone-100"
+            className="block break-words font-bold leading-snug text-slate-800 connect-dark:text-stone-100"
           >
             {post.author}
           </Link>
-          <span className="ml-2 text-sm text-stone-500 connect-dark:text-stone-400">
+          <p className="break-words text-sm text-stone-500 connect-dark:text-stone-400">
             @{post.username} · {timeAgo(post.created_at)}
-          </span>
-          <p className="text-sm text-stone-500 connect-dark:text-stone-400">
+          </p>
+          <p className="break-words text-sm text-stone-500 connect-dark:text-stone-400">
             {roleLabel(post)}
             {post.angkatan && ` · ${post.angkatan}`}
           </p>
         </div>
-        {post.owned && (
-          <button
-            onClick={() => setModal("edit")}
-            title="Edit postingan"
-            aria-label="Edit postingan"
-          >
-            <Pencil size={16} />
-          </button>
-        )}
-        {(post.owned || me.role === "admin") && (
-          <button
-            onClick={() => setModal("delete")}
-            title="Hapus postingan"
-            aria-label="Hapus postingan"
-            className="ml-3"
-          >
-            <Trash2 size={16} />
-          </button>
-        )}
+        <div className="flex shrink-0 items-start">
+          {post.owned && (
+            <button
+              onClick={() => setModal("edit")}
+              title="Edit postingan"
+              aria-label="Edit postingan"
+              className="-m-1 p-2"
+            >
+              <Pencil size={16} />
+            </button>
+          )}
+          {(post.owned || me.role === "admin") && (
+            <button
+              onClick={() => setModal("delete")}
+              title="Hapus postingan"
+              aria-label="Hapus postingan"
+              className="-m-1 ml-1 p-2"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        </div>
       </div>
-      <div className="mt-4 sm:ml-[68px]">
+      <div className="mt-3 sm:ml-[68px] sm:mt-4">
         <span
-          className={`rounded-full px-3 py-1 text-xs font-bold ${colors[post.category]}`}
+          className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${colors[post.category]}`}
         >
           {post.category}
         </span>
-        <h2 className="mt-3 font-serif text-[22px] font-bold leading-tight">
+        <h2 className="mt-3 break-words font-serif text-lg font-bold leading-tight sm:text-[22px]">
           <Link to={`/ime-connect/post/${post.id}`}>{post.title}</Link>
         </h2>
-        <p className="mt-2 whitespace-pre-wrap break-words text-[15px] leading-6 text-stone-600 connect-dark:text-stone-300">
+        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-stone-600 sm:text-[15px] connect-dark:text-stone-300">
           {post.body}
         </p>
-        <div className="mt-4 flex items-center gap-4 border-t border-stone-200 pt-3 text-sm text-stone-500 connect-dark:border-stone-700 connect-dark:text-stone-400">
+        <div className="mt-4 flex items-center gap-3 border-t border-stone-200 pt-3 text-sm text-stone-500 sm:gap-4 connect-dark:border-stone-700 connect-dark:text-stone-400">
           <button
             disabled={busy}
             aria-pressed={post.liked}
             onClick={() => action("like", post.liked)}
             className={
               post.liked
-                ? "flex items-center gap-1 text-red-500"
-                : "flex items-center gap-1"
+                ? "flex min-h-[44px] items-center gap-1 text-red-500"
+                : "flex min-h-[44px] items-center gap-1"
             }
           >
             <Heart size={17} fill={post.liked ? "currentColor" : "none"} />
@@ -424,12 +433,12 @@ function PostCard({ post, changed, removed }) {
           </button>
           <button
             onClick={() => setModal("comments")}
-            className="flex items-center gap-1"
+            className="flex min-h-[44px] items-center gap-1"
           >
             <MessageCircle size={17} />
             {post.comments}
           </button>
-          <button onClick={share} className="flex items-center gap-1">
+          <button onClick={share} className="flex min-h-[44px] items-center gap-1">
             <Share2 size={17} />
             {post.shares}
           </button>
@@ -437,7 +446,7 @@ function PostCard({ post, changed, removed }) {
             disabled={busy}
             aria-pressed={post.saved}
             onClick={() => action("save", post.saved)}
-            className={`ml-auto flex items-center gap-1 ${post.saved ? "text-[#c99235]" : ""}`}
+            className={`ml-auto flex min-h-[44px] items-center gap-1 ${post.saved ? "text-[#c99235]" : ""}`}
           >
             <Bookmark size={17} fill={post.saved ? "currentColor" : "none"} />
             <span className="hidden sm:inline">Simpan</span>
@@ -489,14 +498,14 @@ function Feed({ category, author, saved, composer = false }) {
   if (search.get("tag")) p.set("tag", search.get("tag"));
   const query = useConnectQuery(`/posts?${p}`, revision);
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-3 sm:space-y-4">
       {composer && (
-        <div className="rounded-2xl border border-stone-200 bg-white p-4 transition-colors duration-300 connect-dark:border-stone-700 connect-dark:bg-[#22221f]">
-          <div className="flex gap-3">
+        <div className="rounded-2xl border border-stone-200 bg-white p-3 transition-colors duration-300 sm:p-4 connect-dark:border-stone-700 connect-dark:bg-[#22221f]">
+          <div className="flex items-center gap-3">
             <Avatar profile={me} />
             <button
               onClick={() => setNewPost(true)}
-              className="flex-1 rounded-full bg-[#efeeeb] px-5 text-left text-sm text-stone-500 transition-colors duration-300 connect-dark:bg-stone-800 connect-dark:text-stone-400"
+              className="min-h-[44px] flex-1 truncate rounded-full bg-[#efeeeb] px-5 py-2.5 text-left text-[13px] text-stone-500 transition-colors duration-300 sm:text-sm connect-dark:bg-stone-800 connect-dark:text-stone-400"
             >
               Bagikan informasi untuk teman Elektro...
             </button>
@@ -504,12 +513,13 @@ function Feed({ category, author, saved, composer = false }) {
         </div>
       )}
       {!category && !author && !saved && (
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex snap-x flex-nowrap gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,black_92%,transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {["Semua", ...categories].map((x) => (
             <button
               key={x}
               onClick={() => setFilter(x)}
-              className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold ${filter === x ? "bg-[#c99235] text-white" : "bg-[#efeeeb] text-stone-500 connect-dark:bg-stone-800 connect-dark:text-stone-400"}`}
+              aria-pressed={filter === x}
+              className={`min-h-[36px] shrink-0 snap-start whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold ${filter === x ? "bg-[#c99235] text-white" : "bg-[#efeeeb] text-stone-500 connect-dark:bg-stone-800 connect-dark:text-stone-400"}`}
             >
               {x}
             </button>
@@ -517,7 +527,7 @@ function Feed({ category, author, saved, composer = false }) {
         </div>
       )}
       {(search.get("q") || search.get("tag")) && (
-        <p className="text-sm text-stone-500 connect-dark:text-stone-400">
+        <p className="break-words text-sm text-stone-500 connect-dark:text-stone-400">
           Hasil pencarian: {search.get("q") || `#${search.get("tag")}`}
         </p>
       )}
@@ -537,7 +547,7 @@ function Feed({ category, author, saved, composer = false }) {
         <button
           onClick={query.more}
           disabled={query.moreBusy}
-          className="mx-auto block rounded-full border border-stone-200 bg-white px-4 py-2 text-sm transition-colors duration-300 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-200"
+          className="mx-auto block min-h-[44px] rounded-full border border-stone-200 bg-white px-4 py-2 text-sm transition-colors duration-300 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-200"
         >
           {query.moreBusy ? (
             <HmeLoader label="Memuat" compact />
@@ -564,7 +574,7 @@ function Sidebar({ active, theme, toggleTheme }) {
     navigate("/member/login", { replace: true });
   }
   return (
-    <aside className="bg-[#1d1d1b] text-white lg:sticky lg:top-0 lg:h-screen lg:w-[236px]">
+    <aside className="hidden bg-[#1d1d1b] text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:w-[236px]">
       <div className="flex h-full flex-col px-4 py-5 lg:px-5 lg:py-7">
         <Link to="/ime-connect" className="flex items-center gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-1">
@@ -640,25 +650,157 @@ function Sidebar({ active, theme, toggleTheme }) {
     </aside>
   );
 }
-function SearchBox() {
+function MobileTopBar({ theme, toggleTheme }) {
+  const { me } = useConnect();
+  return (
+    <header className="sticky top-0 z-40 bg-[#1d1d1b] text-white lg:hidden">
+      <div className="flex h-14 items-center justify-between gap-2 px-4">
+        <Link to="/ime-connect" className="flex min-w-0 items-center gap-2">
+          <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-0.5">
+            <img
+              src={hmeLogo}
+              alt="Logo HME"
+              className="h-full w-full object-contain"
+            />
+          </span>
+          <span className="min-w-0 leading-tight">
+            <b className="block truncate font-serif text-sm">IME Connect</b>
+            <small className="block truncate text-[10px] text-white/40">
+              Himpunan Elektro
+            </small>
+          </span>
+        </Link>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-pressed={theme === "dark"}
+            aria-label={theme === "dark" ? "Ubah ke mode terang" : "Ubah ke mode gelap"}
+            title={theme === "dark" ? "Mode terang" : "Mode gelap"}
+            className="rounded-full p-2.5 text-white/80 transition-colors hover:bg-white/10"
+          >
+            {theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+          <Link
+            to="/ime-connect/profil"
+            aria-label="Buka profil saya"
+            className="block rounded-full p-0.5 transition-colors hover:bg-white/10"
+          >
+            <span className="block h-8 w-8 overflow-hidden rounded-full">
+              {me.avatar ? (
+                <img
+                  src={me.avatar}
+                  alt={me.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="grid h-full w-full place-items-center bg-[#474747] text-xs font-bold text-white">
+                  {initials(me.name)}
+                </span>
+              )}
+            </span>
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+function MobileBottomNav({ active }) {
+  return (
+    <nav
+      aria-label="Navigasi utama"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#1d1d1b] lg:hidden"
+    >
+      <div className="grid grid-cols-5 items-end px-2 pb-[env(safe-area-inset-bottom)] pt-0.5">
+        {mobileNavOrder.map((key) => {
+          const { label, Icon } = navByKey[key];
+          const isActive = active === key;
+          const to = key === "beranda" ? "/ime-connect" : `/ime-connect/${key}`;
+          if (key === "beranda") {
+            return (
+              <Link
+                key={key}
+                to={to}
+                aria-current={isActive ? "page" : undefined}
+                aria-label="Beranda"
+                className="flex min-h-[56px] flex-col items-center justify-end gap-0 pb-1 text-[9px] font-bold"
+              >
+                <span
+                  className={`-mt-5 grid h-12 w-12 place-items-center rounded-full bg-[#c99235] text-white shadow-lg ring-2 ring-[#f6f5f1] transition-transform active:scale-95 connect-dark:ring-[#171714] ${isActive ? "ring-[#c99235]/30" : ""}`}
+                >
+                  <House size={21} />
+                </span>
+                <span className={isActive ? "text-[#d5a344]" : "text-white/60"}>
+                  {label}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`h-0.5 w-3 rounded-full ${isActive ? "bg-[#d5a344]" : "bg-transparent"}`}
+                />
+              </Link>
+            );
+          }
+          const ItemIcon = key === "tensi" && !isActive ? Folder : Icon;
+          return (
+            <Link
+              key={key}
+              to={to}
+              aria-current={isActive ? "page" : undefined}
+              className={`flex min-h-[54px] flex-col items-center justify-center gap-0 py-1 text-[9px] font-semibold ${isActive ? "text-[#d5a344]" : "text-white/60"}`}
+            >
+              <span className="relative">
+                <ItemIcon size={20} />
+                {key === "tensi" && (
+                  <span
+                    aria-hidden="true"
+                    title="Baru"
+                    className="absolute -right-1.5 -top-1 h-2 w-2 rounded-full bg-[#d5a344]"
+                  />
+                )}
+              </span>
+              {label}
+              <span
+                aria-hidden="true"
+                className={`h-0.5 w-3 rounded-full ${isActive ? "bg-[#d5a344]" : "bg-transparent"}`}
+              />
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+function SearchBox({ placeholder = "Cari informasi...", variant = "posts" }) {
   const [params, setParams] = useSearchParams();
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         const q = new FormData(e.currentTarget).get("q").trim();
-        setParams(q ? { q } : {});
+        if (variant === "people") {
+          setParams((prev) => {
+            const next = new URLSearchParams(prev);
+            if (q) next.set("q", q);
+            else next.delete("q");
+            return next;
+          });
+        } else {
+          setParams(q ? { q } : {});
+        }
       }}
       className="relative"
+      role="search"
     >
       <Search
         size={18}
         className="absolute left-4 top-4 text-stone-400 connect-dark:text-stone-500"
       />
       <input
+        key={`${variant}-${params.get("tab") || "posts"}`}
         name="q"
         defaultValue={params.get("q") || ""}
-        placeholder="Cari informasi..."
+        placeholder={placeholder}
+        aria-label={placeholder}
         className="h-12 w-full rounded-2xl bg-[#efeeeb] pl-11 pr-4 text-sm text-stone-900 outline-none transition-colors duration-300 placeholder:text-stone-400 connect-dark:bg-stone-800 connect-dark:text-stone-100 connect-dark:placeholder:text-stone-500"
       />
     </form>
@@ -749,10 +891,18 @@ function Network() {
     ? params.get("tab")
     : "discover";
   const owner = params.get("owner");
+  const keyword = (params.get("q") || "").trim();
   const q = useConnectQuery(
-    `/profiles?tab=${tab}${owner ? `&owner=${owner}` : ""}`,
+    `/profiles?tab=${tab}${owner ? `&owner=${owner}` : ""}${keyword ? `&q=${encodeURIComponent(keyword)}` : ""}`,
     revision,
   );
+  function switchTab(key) {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", key);
+      return next;
+    });
+  }
   return (
     <>
       <div className="flex rounded-2xl bg-[#edebe7] p-1 transition-colors duration-300 connect-dark:bg-stone-800">
@@ -763,15 +913,23 @@ function Network() {
         ].map(([key, label]) => (
           <button
             key={key}
-            onClick={() => setParams({ tab: key, ...(owner ? { owner } : {}) })}
-            className={`h-11 flex-1 rounded-xl text-sm font-bold ${tab === key ? "bg-white shadow-sm connect-dark:bg-[#292925] connect-dark:text-stone-100" : "text-stone-500 connect-dark:text-stone-400"}`}
+            onClick={() => switchTab(key)}
+            className={`h-11 min-h-[44px] flex-1 rounded-xl text-sm font-bold ${tab === key ? "bg-white shadow-sm connect-dark:bg-[#292925] connect-dark:text-stone-100" : "text-stone-500 connect-dark:text-stone-400"}`}
           >
             {label}
           </button>
         ))}
       </div>
+      {keyword && (
+        <p className="mt-4 break-words text-sm text-stone-500 connect-dark:text-stone-400">
+          Hasil pencarian: {keyword}
+        </p>
+      )}
       <div className="mt-5 space-y-4">
-        <Loading query={q} empty="Belum ada akun." />
+        <Loading
+          query={q}
+          empty={keyword ? "Tidak ditemukan. Coba kata kunci lain." : "Belum ada akun."}
+        />
         {q.data?.items.map((p) => (
           <article
             key={p.id}
@@ -785,13 +943,18 @@ function Network() {
   );
 }
 function Profile({ id }) {
-  const { me, revision, refresh, setMe } = useConnect();
+  const { me, revision, refresh, setMe, request } = useConnect();
+  const navigate = useNavigate();
   const [tab, setTab] = useState("Postingan");
   const [editing, setEditing] = useState(false);
   const q = useConnectQuery(`/profiles/${id || me.id}`, revision);
   const profile = q.data;
   if (!profile) return <Loading query={q} />;
   const own = profile.id === me.id;
+  async function logout() {
+    await request("/auth/logout", { method: "POST" }, true);
+    navigate("/member/login", { replace: true });
+  }
   async function save(e) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -823,12 +986,20 @@ function Profile({ id }) {
               <Avatar profile={profile} large />
             </div>
             {own && (
-              <button
-                onClick={() => setEditing(true)}
-                className="rounded-full border px-4 py-2 text-sm font-bold"
-              >
-                Edit Profil
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  onClick={logout}
+                  className="rounded-full border border-red-200 px-4 py-2 text-sm font-bold text-red-600 lg:hidden"
+                >
+                  Keluar
+                </button>
+                <button
+                  onClick={() => setEditing(true)}
+                  className="rounded-full border px-4 py-2 text-sm font-bold"
+                >
+                  Edit Profil
+                </button>
+              </div>
             )}
           </div>
           <h1 className="mt-4 font-serif text-3xl font-bold">{profile.name}</h1>
@@ -956,18 +1127,25 @@ function Content({ theme, toggleTheme }) {
       className="ime-connect min-h-screen bg-[#f6f5f1] text-stone-900 transition-colors duration-300 connect-dark:bg-[#171714] connect-dark:text-stone-100"
       data-theme={theme}
     >
+      <MobileTopBar theme={theme} toggleTheme={toggleTheme} />
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
         <Sidebar active={active} theme={theme} toggleTheme={toggleTheme} />
-        <main className="min-w-0 flex-1 px-4 py-7 sm:px-7 lg:px-9">
+        <main className="min-w-0 flex-1 px-4 pb-20 pt-5 sm:px-6 sm:pt-6 lg:px-9 lg:pb-7 lg:pt-7">
           <div className="mx-auto grid max-w-[1140px] gap-7 xl:grid-cols-[minmax(0,1fr)_280px]">
-            <section>
-              <header className="mb-6">
-                <h1 className="font-serif text-4xl font-bold">{title}</h1>
+            <section className="min-w-0">
+              <header className="mb-4 sm:mb-6">
+                <h1 className="font-serif text-2xl font-bold sm:text-3xl lg:text-4xl">{title}</h1>
                 <span className="mt-3 block h-1 w-11 bg-[#c99235]" />
               </header>
-              <div className="mb-5 xl:hidden">
-                <SearchBox />
-              </div>
+              {active === "network" ? (
+                <div className="mb-4 sm:mb-5 xl:hidden">
+                  <SearchBox variant="people" placeholder="Cari orang/pengguna..." />
+                </div>
+              ) : active === "profil" ? null : (
+                <div className="mb-4 sm:mb-5 xl:hidden">
+                  <SearchBox variant="posts" placeholder="Cari informasi..." />
+                </div>
+              )}
               {active === "beranda" && <Feed composer />}
               {active === "tensi" && (
                 <Feed category="TENSI" composer={me.role === "admin"} />
@@ -997,6 +1175,7 @@ function Content({ theme, toggleTheme }) {
           </div>
         </main>
       </div>
+      <MobileBottomNav active={active} />
     </div>
   );
 }
