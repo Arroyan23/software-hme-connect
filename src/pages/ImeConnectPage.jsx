@@ -404,7 +404,7 @@ function PostCard({ post, changed, removed, compact = false }) {
     }
   }
   return (
-    <article className={`rounded-2xl border border-stone-200 bg-white p-4 text-stone-900 transition-colors duration-300 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100 ${compact ? "mx-auto w-full max-w-[560px]" : "sm:p-6"}`}>
+    <article className={`rounded-2xl border border-stone-200 bg-white p-4 text-stone-900 transition-colors duration-300 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100 ${compact ? "" : "sm:p-6"}`}>
       <div className="flex items-start gap-3">
         <Link
           to={`/ime-connect/profil/${post.author_id}`}
@@ -450,7 +450,7 @@ function PostCard({ post, changed, removed, compact = false }) {
           )}
         </div>
       </div>
-      <div className="mt-3 sm:ml-[68px] sm:mt-4">
+      <div className={`mt-3 ${compact ? "" : "sm:ml-[68px] sm:mt-4"}`}>
         <span
           className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${colors[post.category]}`}
         >
@@ -462,21 +462,21 @@ function PostCard({ post, changed, removed, compact = false }) {
         <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-stone-600 sm:text-[15px] connect-dark:text-stone-300 ${compact ? "line-clamp-3" : ""}`}>
           {post.body}
         </p>
-        {compact && (
-          <Link
-            to={`/ime-connect/post/${post.id}`}
-            className="mt-1 inline-block text-[13px] font-bold text-[#c99235] hover:underline"
-          >
-            Baca selengkapnya
-          </Link>
-        )}
         {post.image && (
           <img
             src={post.image}
             alt=""
             loading="lazy"
-            className={`mt-4 w-full rounded-xl object-cover ${compact ? "aspect-[16/10] max-h-[260px]" : "max-h-[520px]"}`}
+            className={`mt-4 w-full rounded-xl object-contain ${compact ? "max-h-[360px]" : "max-h-[520px]"}`}
           />
+        )}
+        {compact && (
+          <Link
+            to={`/ime-connect/post/${post.id}`}
+            className="mt-2 inline-block text-[13px] font-bold text-[#c99235] hover:underline"
+          >
+            Baca selengkapnya
+          </Link>
         )}
         <div className={`mt-4 flex items-center border-t border-stone-200 pt-3 text-sm text-stone-500 connect-dark:border-stone-700 connect-dark:text-stone-400 ${compact ? "gap-2" : "gap-3 sm:gap-4"}`}>
           <button
@@ -624,15 +624,16 @@ function Feed({ category, author, saved, composer = false }) {
           <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-stone-500 connect-dark:text-stone-400">
             Postingan lainnya
           </p>
-          <div className="grid items-start gap-3 sm:grid-cols-2 sm:gap-4 sm:[&>:last-child:nth-child(odd)]:col-span-2">
+          <div className="columns-1 gap-3 sm:columns-2 sm:gap-4">
             {rest.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                changed={query.replace}
-                removed={query.reload}
-                compact
-              />
+              <div key={post.id} className="mb-3 inline-block w-full break-inside-avoid align-top sm:mb-4">
+                <PostCard
+                  post={post}
+                  changed={query.replace}
+                  removed={query.reload}
+                  compact
+                />
+              </div>
             ))}
           </div>
         </section>
