@@ -187,6 +187,7 @@ test('IME Connect full member lifecycle, ownership, concurrency, filters, pagina
   const created=await alice('/connect/posts','POST',{...body,author_id:b.id});
   assert.equal(created.status,201,JSON.stringify(created.data));
   const id=created.data.id;
+  assert.equal(created.data.image,null,'post images are optional');
   assert.equal(created.data.author_id,a.id,'author cannot be forged');
   assert.equal((await bob(`/connect/posts/${id}`,'PUT',body)).status,404);
   assert.equal((await bob(`/connect/posts/${id}`,'DELETE')).status,404);
@@ -234,6 +235,15 @@ test('IME Connect full member lifecycle, ownership, concurrency, filters, pagina
   const second=(await alice(`/connect/posts?author=${a.id}&limit=2&before=${first.nextCursor}`)).data;
   assert.equal(first.items.length,2); assert.equal(second.items.length,2); assert.equal(second.nextCursor,null);
   assert.equal(new Set([...first.items,...second.items].map(post=>post.id)).size,4);
+  const imageBytes=await sharp({create:{width:10,height:10,channels:3,background:'#c9970d'}}).png().toBuffer();
+  const imagePost=new FormData();
+  for(const [key,value] of Object.entries(body)) imagePost.append(key,value);
+  imagePost.append('image',new Blob([imageBytes],{type:'image/png'}),'post.png');
+  const withImage=await alice('/connect/posts','POST',imagePost);
+  assert.equal(withImage.status,201,JSON.stringify(withImage.data));
+  assert.ok(withImage.data.image);
+  assert.equal((await alice(withImage.data.image.replace('/api',''))).headers.get('content-type'),'image/webp');
+  assert.equal((await alice(`/connect/posts/${withImage.data.id}`,'PUT',body)).data.image,withImage.data.image,'editing without a replacement preserves the image');
   assert.equal((await alice('/connect/posts?q=Revisi')).data.items.length,1);
   assert.ok((await alice('/connect/posts?tag=smartgrid')).data.items.length>=4);
   const channel=(await alice('/connect/posts?category=TENSI')).data.items;

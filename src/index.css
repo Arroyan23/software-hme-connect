@@ -63,3 +63,12 @@ html { scrollbar-width: thin; scrollbar-color: #c9970d transparent; }
   @keyframes landing-zoom-in { from { transform: scale(1); } to { transform: scale(1.12); } }
   .kenburns-active { animation: landing-zoom-in 5s linear forwards; }
 }
+
+/* IME Connect — scale iPad 1 kolom agar tampil seperti desktop yang dikecilkan.
+   744-1023: portrait kecil (mini 744, 10.2" 810, Air 11" 820, Pro 11" 834).
+   1024+ dan landscape besar ikut desktop native tanpa zoom (Rail tampil di xl).
+   Zoom hanya di main agar Sidebar tetap full 100vh sampai bawah.
+   Scoped .ime-connect agar tidak bocor ke halaman lain. */
+@media (min-width: 744px) and (max-width: 1023.98px) {
+  .ime-connect main.ipad-scale-root { zoom: 0.85; }
+}

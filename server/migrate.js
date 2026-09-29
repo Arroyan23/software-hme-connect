@@ -18,6 +18,15 @@ export async function migrate() {
         ADD COLUMN publish_count smallint NOT NULL DEFAULT 0 CHECK (publish_count BETWEEN 0 AND 60)`);
       await client.query("INSERT INTO hme.migrations(name) VALUES ('ime-connect-publish-quota')");
     }
+    if (!(await client.query("SELECT 1 FROM hme.migrations WHERE name='ime-connect-post-image'")).rowCount) {
+      await client.query('ALTER TABLE hme.connect_posts ADD COLUMN image bytea CHECK (image IS NULL OR octet_length(image) <= 5242880)');
+      await client.query("INSERT INTO hme.migrations(name) VALUES ('ime-connect-post-image')");
+    }
+    if (!(await client.query("SELECT 1 FROM hme.migrations WHERE name='ime-connect-post-image-5mb'")).rowCount) {
+      await client.query('ALTER TABLE hme.connect_posts DROP CONSTRAINT IF EXISTS connect_posts_image_check');
+      await client.query('ALTER TABLE hme.connect_posts ADD CONSTRAINT connect_posts_image_check CHECK (image IS NULL OR octet_length(image) <= 5242880)');
+      await client.query("INSERT INTO hme.migrations(name) VALUES ('ime-connect-post-image-5mb')");
+    }
     const seeded = await client.query("SELECT 1 FROM hme.migrations WHERE name = 'initial-content'");
     if (seeded.rowCount) return;
     const months = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',Mei:'05',Jun:'06',Jul:'07',Ags:'08',Sep:'09',Okt:'10',Nov:'11',Des:'12' };

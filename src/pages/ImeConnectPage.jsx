@@ -196,7 +196,7 @@ function PostForm({ post, category, close, done }) {
     try {
       await request(post ? `/posts/${post.id}` : "/posts", {
         method: post ? "PUT" : "POST",
-        body: Object.fromEntries(new FormData(e.currentTarget)),
+        body: new FormData(e.currentTarget),
       });
       done();
       close();
@@ -242,6 +242,25 @@ function PostForm({ post, category, close, done }) {
             defaultValue={post?.body}
           />
         </label>
+        <label className="block text-sm">
+          Gambar (opsional)
+          <input
+            className={input}
+            type="file"
+            name="image"
+            accept="image/jpeg,image/png,image/webp"
+          />
+          <span className="mt-1 block text-xs text-stone-500 connect-dark:text-stone-400">
+            JPEG, PNG, atau WebP, maksimal 5 MB.
+          </span>
+        </label>
+        {post?.image && (
+          <img
+            src={post.image}
+            alt="Gambar postingan saat ini"
+            className="max-h-40 w-full rounded-lg object-cover"
+          />
+        )}
         <Error>{error}</Error>
         <button disabled={busy} className={primary}>
           <Send size={15} className="mr-1 inline" />
@@ -252,10 +271,25 @@ function PostForm({ post, category, close, done }) {
   );
 }
 function CommentModal({ post, close, updatePost }) {
-  const { request } = useConnect();
+  const { me, request } = useConnect();
   const query = useConnectQuery(`/posts/${post.id}/comments`);
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [deletingId, setDeletingId] = useState(null);
+  async function removeComment(id) {
+    if (!window.confirm("Hapus komentar ini?")) return;
+    setDeletingId(id);
+    setError("");
+    try {
+      await request(`/comments/${id}`, { method: "DELETE" });
+      query.reload();
+      updatePost(await request(`/posts/${post.id}`));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingId(null);
+    }
+  }
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
@@ -300,12 +334,23 @@ function CommentModal({ post, close, updatePost }) {
           >
             <div className="flex items-center gap-2">
               <Avatar profile={{ name: c.author, avatar: c.avatar }} />
-              <div>
+              <div className="min-w-0 flex-1">
                 <b className="text-sm">{c.author}</b>
                 <p className="text-xs text-stone-500 connect-dark:text-stone-400">
                   {timeAgo(c.created_at)}
                 </p>
               </div>
+              {(c.owned || me.role === "admin") && (
+                <button
+                  onClick={() => removeComment(c.id)}
+                  disabled={deletingId === c.id}
+                  title="Hapus komentar"
+                  aria-label="Hapus komentar"
+                  className="-m-1 shrink-0 p-2 text-stone-400 transition-colors hover:text-red-600 disabled:opacity-50"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
             </div>
             <p className="mt-2 whitespace-pre-wrap break-words text-sm">
               {c.body}
@@ -316,7 +361,7 @@ function CommentModal({ post, close, updatePost }) {
     </Modal>
   );
 }
-function PostCard({ post, changed, removed }) {
+function PostCard({ post, changed, removed, compact = false }) {
   const { me, request, refresh } = useConnect();
   const [modal, setModal] = useState(null),
     [busy, setBusy] = useState(false),
@@ -359,13 +404,13 @@ function PostCard({ post, changed, removed }) {
     }
   }
   return (
-    <article className="rounded-2xl border border-stone-200 bg-white p-4 text-stone-900 transition-colors duration-300 sm:p-6 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100">
+    <article className={`rounded-2xl border border-stone-200 bg-white p-4 text-stone-900 transition-colors duration-300 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100 ${compact ? "mx-auto w-full max-w-[560px]" : "sm:p-6"}`}>
       <div className="flex items-start gap-3">
         <Link
           to={`/ime-connect/profil/${post.author_id}`}
           className="shrink-0"
         >
-          <Avatar profile={{ name: post.author, avatar: post.avatar }} large />
+          <Avatar profile={{ name: post.author, avatar: post.avatar }} large={!compact} />
         </Link>
         <div className="min-w-0 flex-1">
           <Link
@@ -414,10 +459,26 @@ function PostCard({ post, changed, removed }) {
         <h2 className="mt-3 break-words font-serif text-lg font-bold leading-tight sm:text-[22px]">
           <Link to={`/ime-connect/post/${post.id}`}>{post.title}</Link>
         </h2>
-        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-stone-600 sm:text-[15px] connect-dark:text-stone-300">
+        <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-stone-600 sm:text-[15px] connect-dark:text-stone-300 ${compact ? "line-clamp-3" : ""}`}>
           {post.body}
         </p>
-        <div className="mt-4 flex items-center gap-3 border-t border-stone-200 pt-3 text-sm text-stone-500 sm:gap-4 connect-dark:border-stone-700 connect-dark:text-stone-400">
+        {compact && (
+          <Link
+            to={`/ime-connect/post/${post.id}`}
+            className="mt-1 inline-block text-[13px] font-bold text-[#c99235] hover:underline"
+          >
+            Baca selengkapnya
+          </Link>
+        )}
+        {post.image && (
+          <img
+            src={post.image}
+            alt=""
+            loading="lazy"
+            className={`mt-4 w-full rounded-xl object-cover ${compact ? "aspect-[16/10] max-h-[260px]" : "max-h-[520px]"}`}
+          />
+        )}
+        <div className={`mt-4 flex items-center border-t border-stone-200 pt-3 text-sm text-stone-500 connect-dark:border-stone-700 connect-dark:text-stone-400 ${compact ? "gap-2" : "gap-3 sm:gap-4"}`}>
           <button
             disabled={busy}
             aria-pressed={post.liked}
@@ -497,6 +558,16 @@ function Feed({ category, author, saved, composer = false }) {
   if (search.get("q")) p.set("q", search.get("q"));
   if (search.get("tag")) p.set("tag", search.get("tag"));
   const query = useConnectQuery(`/posts?${p}`, revision);
+  const items = query.data?.items ?? [];
+  const THIRTY_DAYS = 30 * 86400 * 1000;
+  const [now] = useState(() => Date.now());
+  let featured = null;
+  for (const post of items) {
+    if (now - new Date(post.created_at).getTime() > THIRTY_DAYS) continue;
+    if (!featured || post.likes > featured.likes) featured = post;
+  }
+  if (!featured) featured = items[0] ?? null;
+  const rest = featured ? items.filter((post) => post.id !== featured.id) : [];
   return (
     <div className="min-w-0 space-y-3 sm:space-y-4">
       {composer && (
@@ -535,14 +606,37 @@ function Feed({ category, author, saved, composer = false }) {
         query={query}
         empty={saved ? "Belum ada postingan disimpan." : "Belum ada postingan."}
       />
-      {query.data?.items.map((post) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          changed={query.replace}
-          removed={query.reload}
-        />
-      ))}
+      {featured && (
+        <section aria-label="Trending">
+          <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-[#c99235]">
+            Trending
+          </p>
+          <PostCard
+            key={featured.id}
+            post={featured}
+            changed={query.replace}
+            removed={query.reload}
+          />
+        </section>
+      )}
+      {rest.length > 0 && (
+        <section aria-label="Postingan lainnya">
+          <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-stone-500 connect-dark:text-stone-400">
+            Postingan lainnya
+          </p>
+          <div className="grid items-start gap-3 sm:grid-cols-2 sm:gap-4 sm:[&>:last-child:nth-child(odd)]:col-span-2">
+            {rest.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                changed={query.replace}
+                removed={query.reload}
+                compact
+              />
+            ))}
+          </div>
+        </section>
+      )}
       {query.data?.nextCursor && (
         <button
           onClick={query.more}
@@ -574,7 +668,7 @@ function Sidebar({ active, theme, toggleTheme }) {
     navigate("/member/login", { replace: true });
   }
   return (
-    <aside className="hidden bg-[#1d1d1b] text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:w-[236px]">
+    <aside className="hidden bg-[#1d1d1b] text-white min-[744px]:sticky min-[744px]:top-0 min-[744px]:block min-[744px]:h-screen min-[744px]:w-[180px] min-[810px]:w-[200px] lg:w-[236px]">
       <div className="flex h-full flex-col px-4 py-5 lg:px-5 lg:py-7">
         <Link to="/ime-connect" className="flex items-center gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-1">
@@ -589,7 +683,7 @@ function Sidebar({ active, theme, toggleTheme }) {
             <small className="text-white/40">Himpunan Elektro</small>
           </span>
         </Link>
-        <nav className="mt-8 flex gap-1 overflow-x-auto lg:mt-12 lg:block lg:space-y-2">
+        <nav className="mt-8 flex gap-1 overflow-x-auto min-[744px]:mt-10 min-[744px]:block min-[744px]:space-y-2 lg:mt-12">
           {navItems.map(([key, label, Icon]) => (
             <Link
               key={key}
@@ -614,7 +708,7 @@ function Sidebar({ active, theme, toggleTheme }) {
           type="button"
           onClick={toggleTheme}
           aria-pressed={theme === "dark"}
-          className="mt-6 flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[.04] px-3 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 lg:mt-auto"
+          className="mt-6 flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[.04] px-3 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 min-[744px]:mt-auto"
         >
           <span className="flex items-center gap-3">
             {theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
@@ -653,7 +747,7 @@ function Sidebar({ active, theme, toggleTheme }) {
 function MobileTopBar({ theme, toggleTheme }) {
   const { me } = useConnect();
   return (
-    <header className="sticky top-0 z-40 bg-[#1d1d1b] text-white lg:hidden">
+    <header className="sticky top-0 z-40 bg-[#1d1d1b] text-white min-[744px]:hidden">
       <div className="flex h-14 items-center justify-between gap-2 px-4">
         <Link to="/ime-connect" className="flex min-w-0 items-center gap-2">
           <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-0.5">
@@ -709,7 +803,7 @@ function MobileBottomNav({ active }) {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#1d1d1b] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#1d1d1b] min-[744px]:hidden"
     >
       <div className="grid grid-cols-5 items-end px-2 pb-[env(safe-area-inset-bottom)] pt-0.5">
         {mobileNavOrder.map((key) => {
@@ -989,7 +1083,7 @@ function Profile({ id }) {
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   onClick={logout}
-                  className="rounded-full border border-red-200 px-4 py-2 text-sm font-bold text-red-600 lg:hidden"
+                  className="rounded-full border border-red-200 px-4 py-2 text-sm font-bold text-red-600 min-[744px]:hidden"
                 >
                   Keluar
                 </button>
@@ -1128,9 +1222,9 @@ function Content({ theme, toggleTheme }) {
       data-theme={theme}
     >
       <MobileTopBar theme={theme} toggleTheme={toggleTheme} />
-      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
+      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col min-[744px]:flex-row">
         <Sidebar active={active} theme={theme} toggleTheme={toggleTheme} />
-        <main className="min-w-0 flex-1 px-4 pb-20 pt-5 sm:px-6 sm:pt-6 lg:px-9 lg:pb-7 lg:pt-7">
+        <main className="ipad-scale-root min-w-0 flex-1 px-4 pb-20 pt-5 sm:px-6 sm:pt-6 min-[744px]:px-6 min-[744px]:pb-7 min-[744px]:pt-6 lg:px-9 lg:pb-7 lg:pt-7">
           <div className="mx-auto grid max-w-[1140px] gap-7 xl:grid-cols-[minmax(0,1fr)_280px]">
             <section className="min-w-0">
               <header className="mb-4 sm:mb-6">

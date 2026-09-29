@@ -11,6 +11,7 @@ const idSchema = z.coerce.number().int().positive().max(2147483647);
 const categories = ['Beasiswa', 'Magang', 'Organisasi', 'Akademik', 'Info Kampus', 'TENSI', 'Alumni'];
 const postSchema = z.object({ title: z.string().trim().min(1).max(180), body: z.string().trim().min(1).max(10000), category: z.enum(categories) });
 const commentSchema = z.object({ body: z.string().trim().min(1).max(2000) });
+const postImageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 const profileSchema = z.object({
   name: z.string().trim().min(2).max(100),
   username: z.string().trim().toLowerCase().regex(/^[a-z0-9_]{3,32}$/, 'Username: 3-32 huruf, angka, atau underscore'),
@@ -133,10 +134,24 @@ async function canPublish(data, req) {
   if (data.category === 'TENSI' && !req.connect.isAdmin) throw fail(403, 'Hanya admin yang dapat menerbitkan TENSI');
   if (data.category === 'Alumni' && !req.connect.isAdmin && (await getProfile(req.connect.id, req.connect.id)).status !== 'alumni') throw fail(403, 'Kanal Alumni khusus kiriman alumni');
 }
+async function postImageBytes(file) {
+  if (!file) return null;
+  try {
+    const image = sharp(file.buffer, { limitInputPixels: 25000000 });
+    if (!['jpeg', 'png', 'webp'].includes((await image.metadata()).format)) throw new Error('Unsupported image format');
+    const bytes = await image.rotate().resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
+    if (bytes.length > 5 * 1024 * 1024) throw fail(400, 'Gambar terlalu besar setelah diproses (maksimal 5 MB). Pilih gambar lain.');
+    return bytes;
+  } catch (error) {
+    if (error.status) throw error;
+    throw fail(400, 'Gunakan gambar JPEG, PNG, atau WebP yang valid.');
+  }
+}
 async function postsWhere(clauses, values, limit = 1) {
   // Limit first, then count relations only for the visible page.
   return (await pool.query(`WITH page AS (SELECT post.* FROM hme.connect_posts post WHERE ${clauses.join(' AND ')} ORDER BY post.id DESC LIMIT ${limit})
     SELECT post.id,post.title,post.body,post.category,post.created_at,post.updated_at,post.author_id,
+      CASE WHEN post.image IS NULL THEN NULL ELSE '/api/connect/posts/'||post.id||'/image?v='||extract(epoch from post.updated_at)::bigint END AS image,
       coalesce(a.name,m.name) AS author,p.username,p.headline,m.angkatan,
       CASE WHEN a.id IS NOT NULL THEN 'admin' ELSE m.status END AS status,
       CASE WHEN p.avatar IS NULL THEN NULL ELSE '/api/connect/profiles/'||p.id||'/avatar?v='||p.avatar_version END AS avatar,
@@ -168,15 +183,22 @@ connectRouter.get('/posts', async (req, res) => {
   if (q.category === 'TENSI') await pool.query("UPDATE hme.connect_profiles SET tensi_seen_at=now() WHERE id=$1 AND (tensi_seen_at IS NULL OR tensi_seen_at<now()-interval '1 day')", [req.connect.id]);
   res.json(paginate(posts, q.limit));
 });
+connectRouter.get('/posts/:id/image', async (req, res) => {
+  const { rows } = await pool.query('SELECT image FROM hme.connect_posts WHERE id=$1', [idSchema.parse(req.params.id)]);
+  if (!rows[0]?.image) throw fail(404, 'Gambar postingan tidak ditemukan');
+  res.type('image/webp').set('Cache-Control', 'private, max-age=31536000, immutable').send(rows[0].image);
+});
 connectRouter.get('/posts/:id', async (req, res) => res.json(await getPost(idSchema.parse(req.params.id), req.connect.id)));
-connectRouter.post('/posts', publishLimit, async (req, res) => {
+connectRouter.post('/posts', publishLimit, postImageUpload.single('image'), async (req, res) => {
   const data = postSchema.parse(req.body); await canPublish(data, req);
-  const row = await publish(req.connect.id, async client => (await client.query('INSERT INTO hme.connect_posts(author_id,category,title,body,tags) VALUES($1,$2,$3,$4,$5) RETURNING id', [req.connect.id,data.category,data.title,data.body,tagsFor(data)])).rows[0]);
+  const image = await postImageBytes(req.file);
+  const row = await publish(req.connect.id, async client => (await client.query('INSERT INTO hme.connect_posts(author_id,category,title,body,tags,image) VALUES($1,$2,$3,$4,$5,$6) RETURNING id', [req.connect.id,data.category,data.title,data.body,tagsFor(data),image])).rows[0]);
   res.status(201).json(await getPost(row.id, req.connect.id));
 });
-connectRouter.put('/posts/:id', async (req, res) => {
+connectRouter.put('/posts/:id', postImageUpload.single('image'), async (req, res) => {
   const id = idSchema.parse(req.params.id), data = postSchema.parse(req.body); await canPublish(data, req);
-  const result = await pool.query('UPDATE hme.connect_posts SET category=$1,title=$2,body=$3,tags=$4,updated_at=now() WHERE id=$5 AND author_id=$6', [data.category,data.title,data.body,tagsFor(data),id,req.connect.id]);
+  const image = await postImageBytes(req.file);
+  const result = await pool.query('UPDATE hme.connect_posts SET category=$1,title=$2,body=$3,tags=$4,image=coalesce($5,image),updated_at=now() WHERE id=$6 AND author_id=$7', [data.category,data.title,data.body,tagsFor(data),image,id,req.connect.id]);
   if (!result.rowCount) throw fail(404, 'Postingan milikmu tidak ditemukan');
   res.json(await getPost(id, req.connect.id));
 });
