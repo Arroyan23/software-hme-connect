@@ -27,7 +27,7 @@ export default function AuthPage({ register=false, adminRegister=false }) {
       <form onSubmit={submit} className="space-y-5">
         {register && <label className="block text-sm">Nama lengkap<input name="name" required autoComplete="name" className={field} /></label>}
         {register && !adminRegister && <label className="block text-sm">NIM<input name="nim" required autoComplete="off" className={field} /></label>}
-        <label className="block text-sm">Email{register && !adminRegister && <span className="ml-1 text-xs text-gray-500">(...ftmm-YYYY@student.unair.ac.id)</span>}<input name="email" type="email" required autoComplete="username" className={field} /></label>
+        <label className="block text-sm">Email{register && !adminRegister && <span className="ml-1 text-xs text-gray-500">(@student.unair.ac.id atau nama-YYYY@ftmm.unair.ac.id)</span>}<input name="email" type="email" required autoComplete="username" className={field} /></label>
         <label className="block text-sm">Password<input name="password" type="password" required minLength={register ? 12 : 1} maxLength={128} autoComplete={register ? 'new-password' : 'current-password'} className={field} /></label>
         {register && <label className="block text-sm">Konfirmasi password<input name="confirmPassword" type="password" required minLength={12} autoComplete="new-password" className={field} /></label>}
         {register && !adminRegister && <label className="block text-sm">Status<select name="status" defaultValue="mahasiswa" className={field}><option value="mahasiswa">Mahasiswa</option><option value="alumni">Alumni</option></select></label>}

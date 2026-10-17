@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Link,
   useLocation,
@@ -8,6 +8,8 @@ import {
 } from "react-router";
 import {
   Bookmark,
+  Check,
+  CircleAlert,
   Folder,
   GraduationCap,
   Heart,
@@ -68,10 +70,10 @@ const primary =
 const input =
   "mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:ring-2 focus:ring-[#c99235]/30 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100";
 
-function Avatar({ profile, large = false }) {
+function Avatar({ profile, large = false, square = false }) {
   return (
     <div
-      className={`${large ? "h-14 w-14 text-lg" : "h-10 w-10 text-sm"} grid shrink-0 place-items-center overflow-hidden rounded-full bg-[#474747] font-bold text-white`}
+      className={`${large ? "h-14 w-14 text-lg" : "h-10 w-10 text-sm"} grid shrink-0 place-items-center overflow-hidden ${square ? "rounded-xl" : "rounded-full"} bg-[#474747] font-bold text-white`}
     >
       {profile.avatar ? (
         <img
@@ -283,7 +285,7 @@ function CommentModal({ post, close, updatePost }) {
     try {
       await request(`/comments/${id}`, { method: "DELETE" });
       query.reload();
-      updatePost(await request(`/posts/${post.id}`));
+      updatePost({ ...post, comments: Math.max(0, post.comments - 1) });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -292,16 +294,18 @@ function CommentModal({ post, close, updatePost }) {
   }
   async function submit(e) {
     e.preventDefault();
+    const form = e.currentTarget;
+    const body = Object.fromEntries(new FormData(form));
     setBusy(true);
     setError("");
     try {
       await request(`/posts/${post.id}/comments`, {
         method: "POST",
-        body: Object.fromEntries(new FormData(e.currentTarget)),
+        body,
       });
-      e.currentTarget.reset();
+      form.reset();
       query.reload();
-      updatePost(await request(`/posts/${post.id}`));
+      updatePost({ ...post, comments: post.comments + 1 });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -365,7 +369,15 @@ function PostCard({ post, changed, removed, compact = false }) {
   const { me, request, refresh } = useConnect();
   const [modal, setModal] = useState(null),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+  function showToast(type, message) {
+    window.clearTimeout(toastTimer.current);
+    setToast({ type, message });
+    toastTimer.current = window.setTimeout(() => setToast(null), 2800);
+  }
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   async function action(name, on) {
     setBusy(true);
     setError("");
@@ -382,13 +394,20 @@ function PostCard({ post, changed, removed, compact = false }) {
     }
   }
   async function share() {
+    setError("");
     try {
       await navigator.clipboard.writeText(
         `${window.location.origin}/ime-connect/post/${post.id}`,
       );
-      changed(await request(`/posts/${post.id}/share`, { method: "PUT" }));
     } catch {
-      setError("Tautan belum dapat disalin.");
+      showToast("error", "Tautan belum dapat disalin.");
+      return;
+    }
+    showToast("success", "Tautan postingan berhasil disalin.");
+    try {
+      changed(await request(`/posts/${post.id}/share`, { method: "PUT" }));
+    } catch (shareError) {
+      showToast("warning", `Tautan tersalin, tetapi share belum tercatat: ${shareError.message}`);
     }
   }
   async function remove() {
@@ -405,6 +424,26 @@ function PostCard({ post, changed, removed, compact = false }) {
   }
   return (
     <article className={`rounded-2xl border border-stone-200 bg-white p-4 text-stone-900 transition-colors duration-300 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100 ${compact ? "" : "sm:p-6"}`}>
+      {toast && (
+        <div
+          role={toast.type === "error" ? "alert" : "status"}
+          aria-live={toast.type === "error" ? "assertive" : "polite"}
+          className={`fixed left-1/2 top-4 z-[120] flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-black/10 ${
+            toast.type === "success"
+              ? "bg-[#c99235]"
+              : toast.type === "warning"
+                ? "bg-[#ad7927]"
+                : "bg-red-600"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <Check size={18} aria-hidden="true" />
+          ) : (
+            <CircleAlert size={18} aria-hidden="true" />
+          )}
+          <span className="break-words">{toast.message}</span>
+        </div>
+      )}
       <div className="flex items-start gap-3">
         <Link
           to={`/ime-connect/profil/${post.author_id}`}
@@ -450,7 +489,7 @@ function PostCard({ post, changed, removed, compact = false }) {
           )}
         </div>
       </div>
-      <div className={`mt-3 ${compact ? "" : "sm:ml-[68px] sm:mt-4"}`}>
+      <div className="mt-3 sm:mt-4">
         <span
           className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${colors[post.category]}`}
         >
@@ -717,10 +756,10 @@ function Sidebar({ active, theme, toggleTheme }) {
           </span>
           <span
             aria-hidden="true"
-            className={`relative h-5 w-9 rounded-full transition-colors ${theme === "dark" ? "bg-[#c99235]" : "bg-white/20"}`}
+            className={`relative h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors ${theme === "dark" ? "bg-[#c99235]" : "bg-white/20"}`}
           >
             <span
-              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${theme === "dark" ? "translate-x-[18px]" : "translate-x-0.5"}`}
+              className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${theme === "dark" ? "translate-x-4" : "translate-x-0"}`}
             />
           </span>
         </button>
@@ -746,7 +785,19 @@ function Sidebar({ active, theme, toggleTheme }) {
   );
 }
 function MobileTopBar({ theme, toggleTheme }) {
-  const { me } = useConnect();
+  const { me, request } = useConnect();
+  const navigate = useNavigate();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+  async function logout() {
+    setLogoutError("");
+    try {
+      await request("/auth/logout", { method: "POST" }, true);
+      navigate("/member/login", { replace: true });
+    } catch (error) {
+      setLogoutError(error.message);
+    }
+  }
   return (
     <header className="sticky top-0 z-40 bg-[#1d1d1b] text-white min-[744px]:hidden">
       <div className="flex h-14 items-center justify-between gap-2 px-4">
@@ -776,25 +827,59 @@ function MobileTopBar({ theme, toggleTheme }) {
           >
             {theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
           </button>
-          <Link
-            to="/ime-connect/profil"
-            aria-label="Buka profil saya"
-            className="block rounded-full p-0.5 transition-colors hover:bg-white/10"
-          >
-            <span className="block h-8 w-8 overflow-hidden rounded-full">
-              {me.avatar ? (
-                <img
-                  src={me.avatar}
-                  alt={me.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="grid h-full w-full place-items-center bg-[#474747] text-xs font-bold text-white">
-                  {initials(me.name)}
-                </span>
-              )}
-            </span>
-          </Link>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Buka menu profil"
+              aria-expanded={profileMenuOpen}
+              aria-controls="mobile-profile-menu"
+              onClick={() => {
+                setLogoutError("");
+                setProfileMenuOpen((open) => !open);
+              }}
+              className="block rounded-full p-0.5 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c99235]"
+            >
+              <span className="block h-8 w-8 overflow-hidden rounded-full">
+                {me.avatar ? (
+                  <img
+                    src={me.avatar}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="grid h-full w-full place-items-center bg-[#474747] text-xs font-bold text-white">
+                    {initials(me.name)}
+                  </span>
+                )}
+              </span>
+            </button>
+            {profileMenuOpen && (
+              <div
+                id="mobile-profile-menu"
+                className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-stone-200 bg-white p-2 text-stone-900 shadow-xl connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100"
+              >
+                <Link
+                  to="/ime-connect/profil"
+                  onClick={() => setProfileMenuOpen(false)}
+                  className="block rounded-lg px-3 py-2 text-sm font-semibold hover:bg-stone-100 connect-dark:hover:bg-stone-800"
+                >
+                  Lihat profil
+                </Link>
+                {logoutError && (
+                  <p role="alert" className="px-3 py-2 text-xs text-red-600">
+                    {logoutError}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50 connect-dark:hover:bg-red-950/30"
+                >
+                  Keluar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
@@ -903,7 +988,19 @@ function SearchBox({ placeholder = "Cari informasi...", variant = "posts" }) {
 }
 function Rail() {
   const { revision, refresh } = useConnect();
-  const summary = useConnectQuery("/summary", revision);
+  const [wideScreen, setWideScreen] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 1280px)").matches,
+  );
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1280px)");
+    const update = () => setWideScreen(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  const summary = useConnectQuery(wideScreen ? "/summary" : null, revision);
   return (
     <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
       <SearchBox />
@@ -1038,39 +1135,13 @@ function Network() {
   );
 }
 function Profile({ id }) {
-  const { me, revision, refresh, setMe, request } = useConnect();
-  const navigate = useNavigate();
+  const { me, revision } = useConnect();
   const [tab, setTab] = useState("Postingan");
   const [editing, setEditing] = useState(false);
   const q = useConnectQuery(`/profiles/${id || me.id}`, revision);
   const profile = q.data;
   if (!profile) return <Loading query={q} />;
   const own = profile.id === me.id;
-  async function logout() {
-    await request("/auth/logout", { method: "POST" }, true);
-    navigate("/member/login", { replace: true });
-  }
-  async function save(e) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const result = await api("/connect/me", {
-      method: "PUT",
-      body: {
-        name: form.get("name"),
-        username: form.get("username"),
-        headline: form.get("headline"),
-        company: form.get("company"),
-        bio: form.get("bio"),
-        badges: String(form.get("badges"))
-          .split(",")
-          .map((x) => x.trim())
-          .filter(Boolean),
-      },
-    });
-    setMe(result);
-    setEditing(false);
-    refresh();
-  }
   return (
     <>
       <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white transition-colors duration-300 connect-dark:border-stone-700 connect-dark:bg-[#22221f] connect-dark:text-stone-100">
@@ -1078,20 +1149,16 @@ function Profile({ id }) {
         <div className="px-6 pb-6">
           <div className="-mt-12 flex items-end justify-between">
             <div className="rounded-2xl border-4 border-white connect-dark:border-[#22221f]">
-              <Avatar profile={profile} large />
+              <Avatar profile={profile} large square />
             </div>
             {own && (
               <div className="flex shrink-0 items-center gap-2">
                 <button
-                  onClick={logout}
-                  className="rounded-full border border-red-200 px-4 py-2 text-sm font-bold text-red-600 min-[744px]:hidden"
-                >
-                  Keluar
-                </button>
-                <button
+                  type="button"
                   onClick={() => setEditing(true)}
-                  className="rounded-full border px-4 py-2 text-sm font-bold"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#c99235] px-4 py-2 text-sm font-bold text-white shadow-sm transition duration-200 hover:bg-[#ad7927] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c99235] focus-visible:ring-offset-2 active:scale-[.98] connect-dark:focus-visible:ring-offset-[#22221f]"
                 >
+                  <Pencil size={16} aria-hidden="true" />
                   Edit Profil
                 </button>
               </div>
@@ -1142,61 +1209,151 @@ function Profile({ id }) {
         )}
       </div>
       {editing && (
-        <Modal title="Edit Profil" close={() => setEditing(false)}>
-          <form onSubmit={save} className="space-y-3">
-            <label className="block text-sm">
-              Nama
-              <input
-                className={input}
-                name="name"
-                defaultValue={profile.name}
-              />
-            </label>
-            <label className="block text-sm">
-              Username
-              <input
-                className={input}
-                name="username"
-                defaultValue={profile.username}
-              />
-            </label>
-            <label className="block text-sm">
-              Jabatan
-              <input
-                className={input}
-                name="headline"
-                defaultValue={profile.headline}
-              />
-            </label>
-            <label className="block text-sm">
-              Organisasi
-              <input
-                className={input}
-                name="company"
-                defaultValue={profile.company}
-              />
-            </label>
-            <label className="block text-sm">
-              Bio
-              <textarea
-                className={input}
-                name="bio"
-                defaultValue={profile.bio}
-              />
-            </label>
-            <label className="block text-sm">
-              Pencapaian
-              <input
-                className={input}
-                name="badges"
-                defaultValue={profile.badges.join(", ")}
-              />
-            </label>
-            <button className={primary}>Simpan profil</button>
-          </form>
-        </Modal>
+        <EditProfileModal
+          profile={profile}
+          close={() => setEditing(false)}
+          saved={q.replace}
+        />
       )}
     </>
+  );
+}
+function EditProfileModal({ profile, close, saved }) {
+  const { request, setMe } = useConnect();
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(profile.avatar || "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    return () => {
+      if (avatarPreview.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+  async function save(e) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setBusy(true);
+    setError("");
+    try {
+      let updated = await request("/me", {
+        method: "PUT",
+        body: {
+          name: form.get("name"),
+          username: form.get("username"),
+          headline: form.get("headline"),
+          company: form.get("company"),
+          bio: form.get("bio"),
+          badges: String(form.get("badges"))
+            .split(",")
+            .map((badge) => badge.trim())
+            .filter(Boolean),
+        },
+      });
+      setMe(updated);
+      saved(updated);
+      if (avatarFile) {
+        const image = new FormData();
+        image.append("file", avatarFile);
+        updated = await request("/me/avatar", { method: "PUT", body: image });
+        setMe(updated);
+        saved(updated);
+      }
+      close();
+    } catch (saveError) {
+      setError(saveError.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  function chooseAvatar(e) {
+    const file = e.currentTarget.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Pilih foto JPEG, PNG, atau WebP.");
+      setAvatarFile(null);
+      setAvatarPreview(profile.avatar || "");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Ukuran foto maksimal 2 MB.");
+      setAvatarFile(null);
+      setAvatarPreview(profile.avatar || "");
+      return;
+    }
+    setError("");
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  }
+  return (
+    <Modal title="Edit Profil" close={close}>
+      <form onSubmit={save} className="space-y-3">
+        <div className="flex items-center gap-4">
+          <div className="rounded-2xl border-4 border-stone-100 connect-dark:border-stone-700">
+            <Avatar
+              profile={{ ...profile, avatar: avatarPreview }}
+              large
+              square
+            />
+          </div>
+          <label className="block min-w-0 flex-1 text-sm font-semibold">
+            Foto profil
+            <input
+              className={`${input} cursor-pointer`}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={chooseAvatar}
+            />
+            <span className="mt-1 block text-xs font-normal text-stone-500 connect-dark:text-stone-400">
+              JPEG, PNG, atau WebP. Maksimal 2 MB.
+            </span>
+          </label>
+        </div>
+        <label className="block text-sm">
+          Nama
+          <input className={input} name="name" defaultValue={profile.name} />
+        </label>
+        <label className="block text-sm">
+          Username
+          <input
+            className={input}
+            name="username"
+            defaultValue={profile.username}
+          />
+        </label>
+        <label className="block text-sm">
+          Jabatan
+          <input
+            className={input}
+            name="headline"
+            defaultValue={profile.headline}
+          />
+        </label>
+        <label className="block text-sm">
+          Organisasi
+          <input
+            className={input}
+            name="company"
+            defaultValue={profile.company}
+          />
+        </label>
+        <label className="block text-sm">
+          Bio
+          <textarea className={input} name="bio" defaultValue={profile.bio} />
+        </label>
+        <label className="block text-sm">
+          Pencapaian
+          <input
+            className={input}
+            name="badges"
+            defaultValue={profile.badges.join(", ")}
+          />
+        </label>
+        <Error>{error}</Error>
+        <button className={primary} disabled={busy}>
+          {busy ? "Menyimpan..." : "Simpan profil"}
+        </button>
+      </form>
+    </Modal>
   );
 }
 function Content({ theme, toggleTheme }) {

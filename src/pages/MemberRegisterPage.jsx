@@ -40,7 +40,7 @@ export default function MemberRegisterPage() {
         <form onSubmit={submit} className="space-y-5">
           <label className="block text-sm">Nama lengkap<input name="name" required autoComplete="name" className={field} /></label>
           <label className="block text-sm">NIM<input name="nim" required autoComplete="off" className={field} /></label>
-          <label className="block text-sm">Email<input name="email" type="email" required autoComplete="username" className={field} /><span className="mt-1 block text-xs text-gray-500">Gunakan email kampus dengan domain @student.unair.ac.id.</span></label>
+          <label className="block text-sm">Email<input name="email" type="email" required autoComplete="username" className={field} /><span className="mt-1 block text-xs text-gray-500">Gunakan email @student.unair.ac.id atau @ftmm.unair.ac.id, misalnya nama-2025@ftmm.unair.ac.id.</span></label>
           <label className="block text-sm">Password<input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" className={field} /></label>
           <label className="block text-sm">Konfirmasi password<input name="confirmPassword" type="password" required minLength={12} autoComplete="new-password" className={field} /></label>
           <label className="block text-sm">Status<select name="status" defaultValue="mahasiswa" className={field}><option value="mahasiswa">Mahasiswa</option><option value="alumni">Alumni</option></select></label>

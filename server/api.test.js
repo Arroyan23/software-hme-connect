@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 import pg from 'pg';
 import sharp from 'sharp';
 
+const fallbackDatabaseUrl='postgresql://localhost/postgres';
 const database=`hme_test_${process.pid}_${Date.now()}`;
-const originalUrl=new URL(process.env.TEST_DATABASE_URL || process.env.DATABASE_URL);
+const configuredDatabaseUrl=process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || fallbackDatabaseUrl;
+const originalUrl=new URL(configuredDatabaseUrl);
 if (!['localhost', '127.0.0.1', '[::1]'].includes(originalUrl.hostname) && !process.env.TEST_DATABASE_URL) {
   throw new Error('Gunakan TEST_DATABASE_URL khusus pengujian atau DATABASE_URL PostgreSQL lokal. Tes tidak dijalankan pada database remote aplikasi.');
 }
@@ -166,14 +168,15 @@ test('IME Connect authenticates members and admins; all social endpoints reject 
 
 test('IME Connect full member lifecycle, ownership, concurrency, filters, pagination and deletion', async () => {
   const alice=client(),bob=client(),alumni=client();
-  const register=async (request,name,nim,status='mahasiswa') => {
+  const register=async (request,name,nim,status='mahasiswa',email=`${name.toLowerCase()}ftmm-2022@student.unair.ac.id`) => {
     await request('/auth/csrf');
-    const result=await request('/auth/register-member','POST',{ name,nim,email:`${name.toLowerCase()}ftmm-2022@student.unair.ac.id`,password,status });
+    const result=await request('/auth/register-member','POST',{ name,nim,email,password,status });
     assert.equal(result.status,201,JSON.stringify(result.data));
     return (await request('/connect/me')).data;
   };
   const a=await register(alice,'Alice','social1001');
-  const b=await register(bob,'Bobby','social1002');
+  const b=await register(bob,'Bobby','social1002','mahasiswa','ahmad.syawqi.arroyan-2025@ftmm.unair.ac.id');
+  assert.equal(b.angkatan,'2025');
   await register(alumni,'Senior','social1003','alumni');
   assert.equal((await alice('/auth/me')).status,401,'member remains excluded from admin auth');
   assert.equal((await alice('/users')).status,401);
@@ -268,7 +271,7 @@ test('IME Connect full member lifecycle, ownership, concurrency, filters, pagina
   assert.equal((await bob('/auth/logout','POST')).status,200);
   assert.equal((await bob('/connect/posts')).status,401);
   await bob('/auth/csrf');
-  assert.equal((await bob('/auth/login','POST',{email:'bobbyftmm-2022@student.unair.ac.id',password})).status,200);
+  assert.equal((await bob('/auth/login','POST',{email:'ahmad.syawqi.arroyan-2025@ftmm.unair.ac.id',password})).status,200);
   assert.equal((await bob('/connect/me')).data.id,b.id,'same identity after login');
 });
 
